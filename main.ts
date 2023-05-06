@@ -63,7 +63,6 @@ class Tetrimino {
                 result[y].push(img.getPixel(x * CELL_SIZE, y * CELL_SIZE))
             }
         }
-        console.log(result)
         return result
     }
 
