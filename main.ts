@@ -53,10 +53,6 @@ class Tetrimino {
 
     private ghost_piece: Sprite
 
-    constructor() {
-        this.respawn()
-    }
-
     private getColorsArray(): number[][] {
         let result: number[][] = []
         let img = this.piece.image
@@ -70,42 +66,53 @@ class Tetrimino {
         return result
     }
 
-    private spawn_ghost() {
+    private spawn_ghost(respawn: boolean) {
         let img = shapes[this.shapeID + 7]
         if (this.rotation != 0) {
             img = img.rotated(this.rotation * 90)
         }
-        this.ghost_piece = sprites.create(img)
-        this.ghost_piece.setPosition(X0 + (this.x * CELL_SIZE + this.ghost_piece.width / 2), Y0 + (this.bottom * CELL_SIZE + this.ghost_piece.height / 2))
+        this.ghost_piece.setImage(img)
+        let x = X0 + (this.x * CELL_SIZE + this.ghost_piece.width / 2)
+        let y = Y0 + (this.bottom * CELL_SIZE + this.ghost_piece.height / 2)
+        this.ghost_piece.setPosition(x, y)
     }
 
-    respawn() {
+    constructor() {
+        this.piece = sprites.create(image.create(0,0))
+        this.ghost_piece = sprites.create(image.create(0,0))
+        this.spawn()
+    }
+
+    spawn() {
         this.x = (this.shapeID == 3) ? 4 : 3
         this.y = 0
         this.shapeID = bag.deal()
         this.w = (this.shapeID == 0) ? 4 : (this.shapeID == 3 ? 2 : 3)
         this.h = heights[this.shapeID][this.y]
         this.bottom = MATRIX_HEIGHT - this.h
-        this.respawnAt(this.x, this.y, Rotation.Z)
+        this.spawnAt(this.x, this.y, Rotation.Z)
     }
 
-    respawnAt(x: number, y: number, r: number) {
+    spawnAt(x: number, y: number, r: number) {
+        let respawn = (y == 0) ? true : false
         this.x = x
         this.y = y
         this.rotation = r
-        this.piece = sprites.create(shapes[this.shapeID])
+        let img = shapes[this.shapeID]
+        if (this.rotation != 0) {
+            img = img.rotated(this.rotation * 90)
+        }
+        this.piece.setImage(img)
         this.colors = this.getColorsArray()
         this.piece.setPosition(X0 + (this.x * CELL_SIZE + this.piece.width / 2), Y0 + (this.y * CELL_SIZE + this.piece.height / 2))
-        this.spawn_ghost()
+        this.spawn_ghost(respawn)
     }
 
     rotate(cw: boolean) {
         let canRotate = true
         let next_rotation = cw ? ((this.rotation == 3) ? 0 : this.rotation + 1) : ((this.rotation == 0) ? 3 : this.rotation - 1)
         if (canRotate) {
-            this.rotation = next_rotation
-            this.piece.setImage(this.piece.image.rotated(cw ? 90 : -90))
-            this.colors = this.getColorsArray() // update colors array after the rotation
+            this.spawnAt(this.x, this.y, next_rotation)
         }
     }
 }
@@ -213,3 +220,34 @@ let t = new Tetrimino()
 let im = image.create(10, 10)
 
 updateStats()
+
+// CONTROLLER ---------------------------------------------
+
+controller.A.onEvent(ControllerButtonEvent.Pressed, function () {
+    t.rotate(true)
+})
+
+controller.B.onEvent(ControllerButtonEvent.Pressed, function () {
+    t.rotate(false)
+})
+
+controller.down.onEvent(ControllerButtonEvent.Repeated, function () {
+})
+
+controller.left.onEvent(ControllerButtonEvent.Repeated, function () {
+})
+
+controller.right.onEvent(ControllerButtonEvent.Repeated, function () {
+})
+
+controller.down.onEvent(ControllerButtonEvent.Pressed, function () {
+})
+
+controller.left.onEvent(ControllerButtonEvent.Pressed, function () {
+})
+
+controller.right.onEvent(ControllerButtonEvent.Pressed, function () {
+})
+
+controller.up.onEvent(ControllerButtonEvent.Pressed, function () {
+})
