@@ -63,49 +63,53 @@ class Tetrimino {
                 result[y].push(img.getPixel(x * CELL_SIZE, y * CELL_SIZE))
             }
         }
+        console.log(result)
         return result
     }
 
-    private spawn_ghost(respawn: boolean) {
+    private spawn_ghost() {
         let img = shapes[this.shapeID + 7]
         if (this.rotation != 0) {
             img = img.rotated(this.rotation * 90)
         }
         this.ghost_piece.setImage(img)
         let x = X0 + (this.x * CELL_SIZE + this.ghost_piece.width / 2)
-        let y = Y0 + (this.bottom * CELL_SIZE + this.ghost_piece.height / 2)
+        let y = Y0 + ((MATRIX_HEIGHT - this.h) * CELL_SIZE + this.ghost_piece.height / 2)
         this.ghost_piece.setPosition(x, y)
     }
 
     constructor() {
-        this.piece = sprites.create(image.create(0,0))
-        this.ghost_piece = sprites.create(image.create(0,0))
         this.spawn()
     }
-
+    
     spawn() {
+        // Sreates new piece at the start of the game / after locking
         this.x = (this.shapeID == 3) ? 4 : 3
         this.y = 0
         this.shapeID = bag.deal()
         this.w = (this.shapeID == 0) ? 4 : (this.shapeID == 3 ? 2 : 3)
-        this.h = heights[this.shapeID][this.y]
-        this.bottom = MATRIX_HEIGHT - this.h
+        this.bottom = MATRIX_HEIGHT - this.y - this.h
+        this.piece = sprites.create(image.create(0,0))
+        this.ghost_piece = sprites.create(image.create(0, 0))
         this.spawnAt(this.x, this.y, Rotation.Z)
     }
 
-    spawnAt(x: number, y: number, r: number) {
-        let respawn = (y == 0) ? true : false
-        this.x = x
-        this.y = y
+    spawnAt(new_x: number, new_y: number, r: number) {
+        // Respawns and updates the rotation of the existing piece at the new location
+        this.x = new_x
+        this.y = new_y
         this.rotation = r
+        this.h = heights[this.shapeID][this.rotation]
         let img = shapes[this.shapeID]
         if (this.rotation != 0) {
             img = img.rotated(this.rotation * 90)
         }
         this.piece.setImage(img)
         this.colors = this.getColorsArray()
-        this.piece.setPosition(X0 + (this.x * CELL_SIZE + this.piece.width / 2), Y0 + (this.y * CELL_SIZE + this.piece.height / 2))
-        this.spawn_ghost(respawn)
+        let x = X0 + (this.x * CELL_SIZE + this.piece.width / 2)
+        let y = Y0 + (this.y * CELL_SIZE + this.piece.height / 2)
+        this.piece.setPosition(x, y)
+        this.spawn_ghost()
     }
 
     rotate(cw: boolean) {
@@ -117,7 +121,7 @@ class Tetrimino {
     }
 }
 
-// FUNCTIONS ----------------------------------------------
+// EXT. FUNCTIONS -----------------------------------------
 
 function updateStats() {
 
