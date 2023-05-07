@@ -82,7 +82,7 @@ class Tetrimino {
     }
     
     spawn() {
-        // Sreates new piece at the start of the game / after locking
+        // Сreates new piece at the start of the game / after locking
         this.x = (this.shapeID == 3) ? 4 : 3
         this.y = 0
         this.shapeID = bag.deal()
