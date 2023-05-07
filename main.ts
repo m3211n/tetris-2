@@ -117,6 +117,13 @@ class Tetrimino {
         this.spawn_ghost()
     }
 
+    strafe(x_inc: number) {
+        let new_x = this.x + x_inc
+        if (!this.collides(new_x)) {
+            this.spawnAt(new_x, this.y, this.rotation)
+        }
+    }
+
     rotate(cw: boolean) {
         let canRotate = true
         let kick_x = 0
@@ -129,13 +136,6 @@ class Tetrimino {
 
     drop(hard: boolean): void {
         this.spawnAt(this.x, (hard? this.bottom : this.y + 1), this.rotation)
-    }
-
-    strafe(x_inc: number) {
-        let new_x = this.x + x_inc
-        if (!this.collides(new_x)) {
-            this.spawnAt(new_x, this.y, this.rotation)
-        }
     }
 
     collides(new_x: number): boolean {
