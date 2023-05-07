@@ -56,7 +56,7 @@ class Tetrimino {
     private getColorsArray(): number[][] {
         let result: number[][] = []
         let img = this.piece.image
-        let s = img.width / CELL_SIZE 
+        let s = img.width / CELL_SIZE
         for (let y = 0; y < s; y++) {
             result.push([])
             for (let x = 0; x < s; x++) {
