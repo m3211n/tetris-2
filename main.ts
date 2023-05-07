@@ -49,6 +49,8 @@ class Tetrimino {
     y: number
     w: number
     h: number
+    left: number
+    right: number
     bottom: number
 
     private ghost_piece: Sprite
@@ -73,7 +75,7 @@ class Tetrimino {
         }
         this.ghost_piece.setImage(img)
         let x = X0 + (this.x * CELL_SIZE + this.ghost_piece.width / 2)
-        let y = Y0 + ((MATRIX_HEIGHT - this.h) * CELL_SIZE + this.ghost_piece.height / 2)
+        let y = Y0 + (this.bottom * CELL_SIZE + this.ghost_piece.height / 2)
         this.ghost_piece.setPosition(x, y)
     }
 
@@ -83,13 +85,16 @@ class Tetrimino {
     
     spawn() {
         // Сreates new piece at the start of the game / after locking
+        this.shapeID = bag.deal()
         this.x = (this.shapeID == 3) ? 4 : 3
         this.y = 0
-        this.shapeID = bag.deal()
         this.w = (this.shapeID == 0) ? 4 : (this.shapeID == 3 ? 2 : 3)
-        this.bottom = MATRIX_HEIGHT - this.y - this.h
-        this.piece = sprites.create(image.create(0,0))
+        this.left = this.x
+        this.right = this.x + this.w
+        this.piece = sprites.create(image.create(0, 0))
+        this.piece.z = 1
         this.ghost_piece = sprites.create(image.create(0, 0))
+        this.ghost_piece.z = 0
         this.spawnAt(this.x, this.y, Rotation.Z)
     }
 
@@ -99,6 +104,7 @@ class Tetrimino {
         this.y = new_y
         this.rotation = r
         this.h = heights[this.shapeID][this.rotation]
+        this.bottom = MATRIX_HEIGHT - this.h
         let img = shapes[this.shapeID]
         if (this.rotation != 0) {
             img = img.rotated(this.rotation * 90)
@@ -113,9 +119,30 @@ class Tetrimino {
 
     rotate(cw: boolean) {
         let canRotate = true
+        let kick_x = 0
+        let kick_y = 0
         let next_rotation = cw ? ((this.rotation == 3) ? 0 : this.rotation + 1) : ((this.rotation == 0) ? 3 : this.rotation - 1)
         if (canRotate) {
-            this.spawnAt(this.x, this.y, next_rotation)
+            this.spawnAt(this.x + kick_x, this.y + kick_y, next_rotation)
+        }
+    }
+
+    drop(hard: boolean): void {
+        this.spawnAt(this.x, (hard? this.bottom : this.y + 1), this.rotation)
+    }
+
+    strafe(x_inc: number) {
+        let new_x = this.x + x_inc
+        if (!this.collides(new_x)) {
+            this.spawnAt(new_x, this.y, this.rotation)
+        }
+    }
+
+    collides(new_x: number): boolean {
+        if (new_x < 0 || new_x + this.w > MATRIX_WIDTH) {
+            return true
+        } else {
+            return false
         }
     }
 }
@@ -139,6 +166,7 @@ function updateStats() {
 const CELL_SIZE = 5
 const NEXT_PIECES = 3
 const MATRIX_HEIGHT = 22
+const MATRIX_WIDTH = 10
 const X0 = 55
 const Y0 = 5
 
@@ -235,22 +263,29 @@ controller.B.onEvent(ControllerButtonEvent.Pressed, function () {
 })
 
 controller.down.onEvent(ControllerButtonEvent.Repeated, function () {
+    t.drop(false)
 })
 
 controller.left.onEvent(ControllerButtonEvent.Repeated, function () {
+    t.strafe(-1)
 })
 
 controller.right.onEvent(ControllerButtonEvent.Repeated, function () {
+    t.strafe(1)
 })
 
 controller.down.onEvent(ControllerButtonEvent.Pressed, function () {
+    t.drop(false)
 })
 
 controller.left.onEvent(ControllerButtonEvent.Pressed, function () {
+    t.strafe(-1)
 })
 
 controller.right.onEvent(ControllerButtonEvent.Pressed, function () {
+    t.strafe(1)
 })
 
 controller.up.onEvent(ControllerButtonEvent.Pressed, function () {
+    t.drop(true)
 })
