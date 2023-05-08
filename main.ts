@@ -52,6 +52,7 @@ class Tetrimino {
     left: number
     right: number
     bottom: number
+    offsets: number[]
 
     private ghost_piece: Sprite
 
@@ -73,10 +74,12 @@ class Tetrimino {
         let result: number[][] = []
         let img = this.piece.image
         let s = img.width / CELL_SIZE
+        let left_offset = 0
         for (let y = 0; y < s; y++) {
             result.push([])
             for (let x = 0; x < s; x++) {
-                result[y].push(img.getPixel(x * CELL_SIZE, y * CELL_SIZE))
+                let color = img.getPixel(x * CELL_SIZE, y * CELL_SIZE)
+                result[y].push(color)
             }
         }
         return result
@@ -101,6 +104,7 @@ class Tetrimino {
     spawn() {
         // Сreates new piece at the start of the game / after locking
         this.shapeID = bag.deal()
+        this.offsets = offsets[this.shapeID]
         this.x = (this.shapeID == 3) ? 4 : 3
         this.y = 0
         this.w = (this.shapeID == 0) ? 4 : (this.shapeID == 3 ? 2 : 3)
@@ -118,14 +122,14 @@ class Tetrimino {
         this.x = new_x
         this.y = new_y
         this.rotation = r
-        this.h = heights[this.shapeID][this.rotation]
-        this.bottom = MATRIX_HEIGHT - this.h
         let img = shapes[this.shapeID]
         if (this.rotation != 0) {
             img = img.rotated(this.rotation * 90)
         }
         this.piece.setImage(img)
         this.colors = this.getColorsArray()
+        this.h = this.colors[0].length - this.offsets[2]
+        this.bottom = MATRIX_HEIGHT - this.h
         let x = X0 + (this.x * CELL_SIZE + this.piece.width / 2)
         let y = Y0 + (this.y * CELL_SIZE + this.piece.height / 2)
         this.piece.setPosition(x, y)
@@ -134,40 +138,34 @@ class Tetrimino {
 
     strafe(x_inc: number) {
         let new_x = this.x + x_inc
-        if (!this.collides(new_x)) {
+        if (!this.collision(new_x, this.y, this.rotation)) {
             this.respawnAt(new_x, this.y, this.rotation)
         }
     }
 
     sonar(well: Well) {
-        console.log("-------- Sonar start --------")
-        for (let p_col = 0; p_col < this.w; p_col++) { // looping through piece columns from left to right
-            for (let p_row = this.h - 1; p_row >= 0; p_row--) { // and rows from top to bottom
-                if (this.colors[p_row][p_col] != 0) { // when lowest non-empty cell in the column is found
-                    let pitfall_start = this.y + p_row
-                    let min_height = MATRIX_HEIGHT - pitfall_start
-                    console.log("Checking col " + (p_col + this.x) + " row from " + pitfall_start + " to " + MATRIX_HEIGHT + " :")
-                    for (let m_row = pitfall_start; m_row < MATRIX_HEIGHT; m_row++) {
-                        if (well.colors[m_row][this.x + p_col] != undefined && well.colors[m_row][this.x + p_col] != null) {
-                            if (m_row < min_height) {
-                                console.log("Row " + m_row + "is not empty!")
-                                min_height = m_row
-                                console.log("Bottom found at " + min_height)
-                            }
-                            break;
-                        }
-                    }
-                    break;
-                }
-            }
+        let lowest_x = this.x
+        while (!this.collision(lowest_x, this.y, this.rotation) && lowest_x < MATRIX_HEIGHT) {
+            lowest_x++
         }
-        //this.bottom = min_height
+        this.bottom = lowest_x
     }
+
     rotate(cw: boolean) {
+        let next_rotation = 0
+        if (cw) {
+            next_rotation = (this.rotation == 3) ? 0 : this.rotation + 1
+            let elm = this.offsets.pop()
+            this.offsets.unshift(elm)
+        } else {
+            next_rotation = (this.rotation == 0) ? 3 : this.rotation - 1
+            let elm = this.offsets.shift()
+            this.offsets.push(elm)         
+        }
         let canRotate = true // wall kicks to be added later
         let kick_x = 0
         let kick_y = 0
-        let next_rotation = cw ? ((this.rotation == 3) ? 0 : this.rotation + 1) : ((this.rotation == 0) ? 3 : this.rotation - 1)
+        //console.log(this.offsets[0] +" "+ this.offsets[1] +" "+ this.offsets[2] +" "+ this.offsets[3])
         if (canRotate) {
             this.respawnAt(this.x + kick_x, this.y + kick_y, next_rotation)
         }
@@ -181,8 +179,8 @@ class Tetrimino {
     }
 
     lock(well: Well) {
-        for (let row = 0; row < this.h; row++) {
-            for (let col = 0; col < this.w; col++) {
+        for (let row = this.offsets[0]; row < this.offsets[2]; row++) {
+            for (let col = this.offsets[3]; col < this.offsets[1]; col++) {
                 if (this.colors[row][col] != 0) {
                     well.changeColor(this.x + col, this.y + row, this.colors[row][col])
                 }
@@ -193,8 +191,8 @@ class Tetrimino {
         //this.print_well(well)
     }
 
-    collides(new_x: number): boolean {
-        if (new_x < 0 || new_x + this.w > MATRIX_WIDTH) {
+    collision(new_x: number, new_y: number, new_rotation: number): boolean {
+        if (new_x + this.offsets[3] < 0 || new_x + this.w - this.offsets[1] > MATRIX_WIDTH) {
             return true
         } else {
             return false
@@ -214,6 +212,9 @@ class Well {
         this.h = MATRIX_HEIGHT * CELL_SIZE
         for (let i = 0; i < MATRIX_HEIGHT; i++) {
             this.colors.push([])
+            for (let j = 0; j < MATRIX_WIDTH; j++) {
+                this.colors[i].push(0)
+            }
         }
         this.matrix = sprites.create(image.create(this.w, this.h))
         this.matrix.setPosition(X0 + this.w / 2, Y0 + this.h / 2)
@@ -233,6 +234,22 @@ class Well {
                 }
             }
         }
+    }
+
+    row(i: number): number[] {
+        let result = []
+        for (let j = 0; j < MATRIX_WIDTH; j++) {
+            result.push(this.colors[i][j])
+        }
+        return result
+    }
+
+    col(j: number): number[] {
+        let result = []
+        for (let i = 0; i < MATRIX_HEIGHT; i++) {
+            result.push(this.colors[i][j])
+        }
+        return result
     }
 
 }
@@ -278,6 +295,22 @@ const shapes: Image[] = [
     assets.image`T0`,
     assets.image`Z0`
 
+]
+
+const shapes_hash = [
+    {
+
+    }
+]
+
+const offsets = [   // [shape: 0..6][rotation --> pop / unshift][direction: top, right, bottom, left]
+    [1, 0, 2, 0],
+    [0, 0, 1, 0],
+    [0, 0, 1, 0],
+    [0, 0, 0, 0],
+    [0, 0, 1, 0],
+    [0, 0, 1, 0],
+    [0, 0, 1, 0]
 ]
 
 const heights = [
