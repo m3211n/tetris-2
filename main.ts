@@ -55,6 +55,20 @@ class Tetrimino {
 
     private ghost_piece: Sprite
 
+    private print_well(well: Well) {
+        for (let i = 0; i < MATRIX_HEIGHT; i++) {
+            let s = "| "
+            for (let j = 0; j < MATRIX_WIDTH; j++) {
+                if (well.colors[i][j] == undefined) {
+                    s += "  | "
+                } else {
+                    s += well.colors[i][j] + " | "
+                }
+            }
+            console.log(s)
+        }
+    }
+
     private getColorsArray(): number[][] {
         let result: number[][] = []
         let img = this.piece.image
@@ -74,6 +88,7 @@ class Tetrimino {
             img = img.rotated(this.rotation * 90)
         }
         this.ghost_piece.setImage(img)
+        this.sonar(well)
         let x = X0 + (this.x * CELL_SIZE + this.ghost_piece.width / 2)
         let y = Y0 + (this.bottom * CELL_SIZE + this.ghost_piece.height / 2)
         this.ghost_piece.setPosition(x, y)
@@ -92,13 +107,13 @@ class Tetrimino {
         this.left = this.x
         this.right = this.x + this.w
         this.piece = sprites.create(image.create(0, 0))
-        this.piece.z = 1
+        this.piece.z = 2
         this.ghost_piece = sprites.create(image.create(0, 0))
-        this.ghost_piece.z = 0
-        this.spawnAt(this.x, this.y, Rotation.Z)
+        this.ghost_piece.z = 1
+        this.respawnAt(this.x, this.y, Rotation.Z)
     }
 
-    spawnAt(new_x: number, new_y: number, r: number) {
+    respawnAt(new_x: number, new_y: number, r: number) {
         // Respawns and updates the rotation of the existing piece at the new location
         this.x = new_x
         this.y = new_y
@@ -120,8 +135,41 @@ class Tetrimino {
     strafe(x_inc: number) {
         let new_x = this.x + x_inc
         if (!this.collides(new_x)) {
-            this.spawnAt(new_x, this.y, this.rotation)
+            this.respawnAt(new_x, this.y, this.rotation)
         }
+    }
+
+    sonar(well: Well) {
+        console.log("-------- Sonar start --------")
+        for (let p_col = 0; p_col < this.w; p_col++) { // looping through piece columns from left to right
+            for (let p_row = this.h - 1; p_row >= 0; p_row--) { // and rows from top to bottom
+                if (this.colors[p_row][p_col] != 0) { // when lowest non-empty cell in the column is found
+                    
+
+
+
+
+
+
+
+                    let pitfall_start = this.y + p_row
+                    let min_height = MATRIX_HEIGHT - pitfall_start
+                    console.log("Checking col " + (p_col + this.x) + " row from " + pitfall_start + " to " + MATRIX_HEIGHT + " :")
+                    for (let m_row = pitfall_start; m_row < MATRIX_HEIGHT; m_row++) {
+                        if (well.colors[m_row][this.x + p_col] != undefined && well.colors[m_row][this.x + p_col] != null) {
+                            if (m_row < min_height) {
+                                console.log("Row " + m_row + "is not empty!")
+                                min_height = m_row
+                                console.log("Bottom found at " + min_height)
+                            }
+                            break;
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+        this.bottom = min_height
     }
 
     rotate(cw: boolean) {
@@ -130,12 +178,28 @@ class Tetrimino {
         let kick_y = 0
         let next_rotation = cw ? ((this.rotation == 3) ? 0 : this.rotation + 1) : ((this.rotation == 0) ? 3 : this.rotation - 1)
         if (canRotate) {
-            this.spawnAt(this.x + kick_x, this.y + kick_y, next_rotation)
+            this.respawnAt(this.x + kick_x, this.y + kick_y, next_rotation)
         }
     }
 
-    drop(hard: boolean): void {
-        this.spawnAt(this.x, (hard? this.bottom : this.y + 1), this.rotation)
+    drop(hard: boolean) {
+        this.respawnAt(this.x, (hard ? this.bottom : this.y + 1), this.rotation)
+        if (this.y == this.bottom) {
+            this.lock(well)
+        }
+    }
+
+    lock(well: Well) {
+        for (let row = 0; row < this.h; row++) {
+            for (let col = 0; col < this.w; col++) {
+                if (this.colors[row][col] != 0) {
+                    well.changeColor(this.x + col, this.y + row, this.colors[row][col])
+                }
+            }
+        }
+        this.spawn()
+        well.update()
+        //this.print_well(well)
     }
 
     collides(new_x: number): boolean {
@@ -145,6 +209,41 @@ class Tetrimino {
             return false
         }
     }
+}
+
+class Well {
+    matrix: Sprite
+    colors: number[][]
+    w: number
+    h: number
+
+    constructor() {
+        this.colors = []
+        this.w = MATRIX_WIDTH * CELL_SIZE
+        this.h = MATRIX_HEIGHT * CELL_SIZE
+        for (let i = 0; i < MATRIX_HEIGHT; i++) {
+            this.colors.push([])
+        }
+        this.matrix = sprites.create(image.create(this.w, this.h))
+        this.matrix.setPosition(X0 + this.w / 2, Y0 + this.h / 2)
+        this.matrix.image.fill(0)
+    }
+
+    changeColor(x: number, y: number, c: number) {
+        this.colors[y][x] = c
+    }
+
+    update() {
+        this.matrix.image.fill(0)
+        for (let row = 0; row < MATRIX_HEIGHT; row++) {
+            for (let col = 0; col < MATRIX_WIDTH; col++) {
+                if (this.colors[row][col] != undefined && this.colors[row][col] != null) {
+                    this.matrix.image.fillRect(col * CELL_SIZE, row * CELL_SIZE, CELL_SIZE, CELL_SIZE, this.colors[row][col])
+                }
+            }
+        }
+    }
+
 }
 
 // EXT. FUNCTIONS -----------------------------------------
@@ -246,7 +345,8 @@ let lines: number = 0
 let highscore: number = 0
 
 let bag = new Bag()
-let t = new Tetrimino()
+let well = new Well()
+let tetrimino = new Tetrimino()
 
 let im = image.create(10, 10)
 
@@ -255,37 +355,37 @@ updateStats()
 // CONTROLLER ---------------------------------------------
 
 controller.A.onEvent(ControllerButtonEvent.Pressed, function () {
-    t.rotate(true)
+    tetrimino.rotate(true)
 })
 
 controller.B.onEvent(ControllerButtonEvent.Pressed, function () {
-    t.rotate(false)
+    tetrimino.rotate(false)
 })
 
 controller.down.onEvent(ControllerButtonEvent.Repeated, function () {
-    t.drop(false)
+    tetrimino.drop(false)
 })
 
 controller.left.onEvent(ControllerButtonEvent.Repeated, function () {
-    t.strafe(-1)
+    tetrimino.strafe(-1)
 })
 
 controller.right.onEvent(ControllerButtonEvent.Repeated, function () {
-    t.strafe(1)
+    tetrimino.strafe(1)
 })
 
 controller.down.onEvent(ControllerButtonEvent.Pressed, function () {
-    t.drop(false)
+    tetrimino.drop(false)
 })
 
 controller.left.onEvent(ControllerButtonEvent.Pressed, function () {
-    t.strafe(-1)
+    tetrimino.strafe(-1)
 })
 
 controller.right.onEvent(ControllerButtonEvent.Pressed, function () {
-    t.strafe(1)
+    tetrimino.strafe(1)
 })
 
 controller.up.onEvent(ControllerButtonEvent.Pressed, function () {
-    t.drop(true)
+    tetrimino.drop(true)
 })
