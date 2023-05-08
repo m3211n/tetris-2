@@ -144,14 +144,6 @@ class Tetrimino {
         for (let p_col = 0; p_col < this.w; p_col++) { // looping through piece columns from left to right
             for (let p_row = this.h - 1; p_row >= 0; p_row--) { // and rows from top to bottom
                 if (this.colors[p_row][p_col] != 0) { // when lowest non-empty cell in the column is found
-                    
-
-
-
-
-
-
-
                     let pitfall_start = this.y + p_row
                     let min_height = MATRIX_HEIGHT - pitfall_start
                     console.log("Checking col " + (p_col + this.x) + " row from " + pitfall_start + " to " + MATRIX_HEIGHT + " :")
@@ -169,11 +161,10 @@ class Tetrimino {
                 }
             }
         }
-        this.bottom = min_height
+        //this.bottom = min_height
     }
-
     rotate(cw: boolean) {
-        let canRotate = true
+        let canRotate = true // wall kicks to be added later
         let kick_x = 0
         let kick_y = 0
         let next_rotation = cw ? ((this.rotation == 3) ? 0 : this.rotation + 1) : ((this.rotation == 0) ? 3 : this.rotation - 1)
