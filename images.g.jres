@@ -150,5 +150,125 @@
         "namespace": "myImages.",
         "mimeType": "image/x-mkcd-f4",
         "displayName": "Z0"
+    },
+    "myImages.image20": {
+        "id": "myImages.image20",
+        "data": "hwQEAAQAAACQAAAAkAAAAJAAAACQAAAA",
+        "dataEncoding": "base64",
+        "namespace": "myImages.",
+        "mimeType": "image/x-mkcd-f4",
+        "displayName": "data_I"
+    },
+    "myImages.image21": {
+        "id": "myImages.image21",
+        "data": "hwQDAAMAAACIAAAAgAAAAIAAAAA=",
+        "dataEncoding": "base64",
+        "namespace": "myImages.",
+        "mimeType": "image/x-mkcd-f4",
+        "displayName": "data_J"
+    },
+    "myImages.image22": {
+        "id": "myImages.image22",
+        "data": "hwQDAAMAAABAAAAAQAAAAEQAAAA=",
+        "dataEncoding": "base64",
+        "namespace": "myImages.",
+        "mimeType": "image/x-mkcd-f4",
+        "displayName": "data_L"
+    },
+    "myImages.image23": {
+        "id": "myImages.image23",
+        "data": "hwQCAAIAAABVAAAAVQAAAA==",
+        "dataEncoding": "base64",
+        "namespace": "myImages.",
+        "mimeType": "image/x-mkcd-f4",
+        "displayName": "data_O"
+    },
+    "myImages.image24": {
+        "id": "myImages.image24",
+        "data": "hwQDAAMAAABwAAAAdwAAAAcAAAA=",
+        "dataEncoding": "base64",
+        "namespace": "myImages.",
+        "mimeType": "image/x-mkcd-f4",
+        "displayName": "data_S"
+    },
+    "myImages.image25": {
+        "id": "myImages.image25",
+        "data": "hwQDAAMAAAAKAAAAqgAAAAoAAAA=",
+        "dataEncoding": "base64",
+        "namespace": "myImages.",
+        "mimeType": "image/x-mkcd-f4",
+        "displayName": "data_T"
+    },
+    "myImages.image26": {
+        "id": "myImages.image26",
+        "data": "hwQDAAMAAAACAAAAIgAAACAAAAA=",
+        "dataEncoding": "base64",
+        "namespace": "myImages.",
+        "mimeType": "image/x-mkcd-f4",
+        "displayName": "data_Z"
+    },
+    "myImages.image27": {
+        "id": "myImages.image27",
+        "data": "hwQFAAUAAACZmQkAGZEJABmZCQAZmQkAmZkJAA==",
+        "dataEncoding": "base64",
+        "namespace": "myImages.",
+        "mimeType": "image/x-mkcd-f4",
+        "displayName": "tile_I"
+    },
+    "myImages.image28": {
+        "id": "myImages.image28",
+        "data": "hwQFAAUAAACIiAgAmIkIAJiICACYiAgAiIgIAA==",
+        "dataEncoding": "base64",
+        "namespace": "myImages.",
+        "mimeType": "image/x-mkcd-f4",
+        "displayName": "tile_J"
+    },
+    "myImages.image30": {
+        "id": "myImages.image30",
+        "data": "hwQFAAUAAABVVQUAFVEFABVVBQAVVQUAVVUFAA==",
+        "dataEncoding": "base64",
+        "namespace": "myImages.",
+        "mimeType": "image/x-mkcd-f4",
+        "displayName": "tile_O"
+    },
+    "myImages.image31": {
+        "id": "myImages.image31",
+        "data": "hwQFAAUAAAB3dwcAF3EHABd3BwAXdwcAd3cHAA==",
+        "dataEncoding": "base64",
+        "namespace": "myImages.",
+        "mimeType": "image/x-mkcd-f4",
+        "displayName": "tile_S"
+    },
+    "myImages.image32": {
+        "id": "myImages.image32",
+        "data": "hwQFAAUAAACqqgoA2q0KANqqCgDaqgoAqqoKAA==",
+        "dataEncoding": "base64",
+        "namespace": "myImages.",
+        "mimeType": "image/x-mkcd-f4",
+        "displayName": "tile_T"
+    },
+    "myImages.image33": {
+        "id": "myImages.image33",
+        "data": "hwQFAAUAAAAiIgIA0i0CANIiAgDSIgIAIiICAA==",
+        "dataEncoding": "base64",
+        "namespace": "myImages.",
+        "mimeType": "image/x-mkcd-f4",
+        "displayName": "tile_Z"
+    },
+    "myImages.image29": {
+        "id": "myImages.image29",
+        "data": "hwQFAAUAAABERAQA1E0EANREBADURAQAREQEAA==",
+        "dataEncoding": "base64",
+        "namespace": "myImages.",
+        "mimeType": "image/x-mkcd-f4",
+        "displayName": "tile_L"
+    },
+    "myImages.image34": {
+        "id": "myImages.image34",
+        "data": "hwQFAAUAAADMzAwADMAMAAzMDAAMzAwAzMwMAA==",
+        "dataEncoding": "base64",
+        "namespace": "myImages.",
+        "mimeType": "image/x-mkcd-f4",
+        "displayName": "tile_ghost"
     }
 }

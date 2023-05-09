@@ -1,11 +1,3 @@
-interface Tdata {
-    colors: number[][];
-    offsets: number[];
-    spawnX: number;
-    img: Image;
-    ghost_img: Image;
-}
-
 class Bag {
     private preview: Sprite
     private contents: number[]
@@ -34,7 +26,7 @@ class Bag {
     private updateQueue() {
         this.preview.image.fill(0)
         for (let i = 0; i < 3; i++) {
-            this.preview.image.drawImage(shapes_data[this.contents[i]].img, 0, i * 20 + 5)
+            this.preview.image.drawImage(encode(decode(this.contents[i]), false), 0, i * 20 + 5)
         }
     }
 
@@ -49,8 +41,9 @@ class Bag {
 }
 
 class Tetrimino {
-    tdata: Tdata
+    colors: number[][]
     shapeID: number
+    offsets: number[]
     rotation: number
     piece: Sprite
     x: number
@@ -62,38 +55,9 @@ class Tetrimino {
     }
 
     private ghost_piece: Sprite
-
-    private print_well(well: Well) {
-        for (let i = 0; i < MATRIX_HEIGHT; i++) {
-            let s = " | "
-            for (let j = 0; j < MATRIX_WIDTH; j++) {
-                if (well.colors[i][j] == undefined) {
-                    s += " | "
-                } else {
-                    s += well.colors[i][j] + " | "
-                }
-            }
-            console.log(s)
-        }
-    }
-
-    private print_piece(piece?: number[][]) {
-        if (!piece) {
-            piece = this.tdata.colors
-        }
-        console.log("--------")
-        for (let i = 0; i < piece.length; i++) {
-            let s = ""
-            for (let j = 0; j < piece[i].length; j++) {
-                if (piece[i][j] != 0) {
-                    s += "[_]"
-                } else {
-                    s += "   "
-                }
-            }
-            console.log(s)
-        }
-    }
+/* 
+    private 
+ */
 
 /*     private getColorsArray(): number[][] {
         let result: number[][] = []
@@ -110,10 +74,23 @@ class Tetrimino {
 
     }
  */
+
+    encode_ghost(): Image {
+        let img = image.create(this.colors[0].length * CELL_SIZE, this.colors.length * CELL_SIZE)
+        for (let row = 0; row < this.colors.length; row++) {
+            for (let col = 0; col < this.colors.length; col++) {
+                if (this.colors[row][col] != 0) {
+                    img.drawImage(tiles_data[7], col * CELL_SIZE, row * CELL_SIZE)
+                }
+            }
+        }
+        return img
+    }
+
     spawn() {
         // Сreates new piece at the start of the game / after locking
         this.shapeID = bag.deal()
-        this.tdata = shapes_data[this.shapeID]
+        this.colors = decode(this.shapeID)
         if (this.piece && this.ghost_piece) {
             this.piece.destroy()
             this.ghost_piece.destroy()
@@ -122,16 +99,16 @@ class Tetrimino {
         this.piece.z = 2
         this.ghost_piece = sprites.create(image.create(0, 0))
         this.ghost_piece.z = 1
-        this.respawnAt(this.tdata.spawnX, 0, Rotation.Z)
+        this.respawnAt((this.shapeID == 3 ? 4 : 3), 0, 0)
     }
 
     respawnAt(new_x: number, new_y: number, r: number) {
         // Respawns and updates the rotation of the existing piece at the new location
-        console.log(`This is shapeID ${this.shapeID} and rotation ${this.rotation}`)
         this.x = new_x
         this.y = new_y
+        this.offsets = offsets_data[this.shapeID]
         this.rotation = r
-        let img = this.tdata.img
+        let img = encode(this.colors, false)
         if (this.rotation != 0) {
             img = img.rotated(this.rotation * 90)
         }
@@ -140,12 +117,13 @@ class Tetrimino {
         let x = X0 + (this.x * CELL_SIZE + this.piece.width / 2)
         let y = Y0 + (this.y * CELL_SIZE + this.piece.height / 2)
         this.piece.setPosition(x, y)
-        // this.print_piece()
+        console.log(`shapeID ${this.shapeID} and rotation ${this.rotation} spawned at ${this.x}, ${this.y}`)
+        printArray(this.colors)
         this.spawn_ghost()
     }
 
     private spawn_ghost() {
-        let img = this.tdata.ghost_img
+        let img = encode(this.colors, true)
         if (this.rotation != 0) {
             img = img.rotated(this.rotation * 90)
         }
@@ -164,13 +142,13 @@ class Tetrimino {
 
     sonar(well: Well): number { /* returns min possible drop depth (pitfall) the current piece */
         
-        let pitfall = MATRIX_HEIGHT - this.y - this.tdata.colors.length + this.tdata.offsets[2]
+        let pitfall = MATRIX_HEIGHT - this.y - this.colors.length + this.offsets[2]
         // console.log(`----- >> Starting with pitfall = ${pitfall}`)
-        for (let col = this.tdata.offsets[3]; col < this.tdata.colors.length - this.tdata.offsets[1]; col++) {
+        for (let col = this.offsets[3]; col < this.colors.length - this.offsets[1]; col++) {
             let piece_column_bottom_hole = 0
-            for (let row = this.tdata.colors.length - this.tdata.offsets[2] - 1; row >= this.tdata.offsets[0]; row--) {
+            for (let row = this.colors.length - this.offsets[2] - 1; row >= this.offsets[0]; row--) {
                 // console.log(`Color at ${row}, ${col} is ${this.tdata.colors[row][col]}`)
-                if (this.tdata.colors[row][col] != 0) {
+                if (this.colors[row][col] != 0) {
                     // console.log(`Found bottom element at [${row}, ${col}]`)
                     const wellColumn = well.cell_col(col + this.x)
 /* 
@@ -183,7 +161,7 @@ class Tetrimino {
                     if (peak == -1) {
                         peak = MATRIX_HEIGHT
                     }
-                    let col_pitfall = peak - this.y - this.tdata.colors.length + this.tdata.offsets[2] + piece_column_bottom_hole
+                    let col_pitfall = peak - this.y - this.colors.length + this.offsets[2] + piece_column_bottom_hole
                     // console.log(`Column [${col + this.x}] : ${s} Peak = ${peak}; Column pitfall = ${col_pitfall}`)
                     if (col_pitfall < pitfall) {
                         pitfall = col_pitfall
@@ -198,23 +176,21 @@ class Tetrimino {
     }
 
     rotate(cw: boolean) {
-        let next_rotation
-        if (cw) {
-            next_rotation = this.rotation + 1
-            if (next_rotation > 3) {
-                next_rotation = 0
-            }
-            this.tdata.offsets.unshift(this.tdata.offsets.pop())
-        } else {
-            next_rotation = this.rotation - 1
-            if (next_rotation < 0) {
-                next_rotation = 3
-            }
-            this.tdata.offsets.push(this.tdata.offsets.shift())         
+        let next_rotation = this.rotation + (cw ? 1 : -1)
+        if (next_rotation > 3) {
+            next_rotation = 0
+        } else if (next_rotation < 0) {
+            next_rotation = 3
         }
-        let tmp_array = this.tdata.colors
-        this.tdata.colors = rotateArray(tmp_array, cw)
-        // this.print_piece(tmp_array)
+        if (cw) {
+            this.offsets.unshift(this.offsets.pop())
+        } else {
+            this.offsets.push(this.offsets.shift())         
+        }
+        // let tmp_array = this.tdata.colors
+        console.log(`Rotating from ${this.rotation} to ${next_rotation}`)
+        this.colors = rotateArray(this.colors, cw)
+        printArray(this.colors)
         // this.print_piece(this.tdata.colors)
         let canRotate = true // wall kicks to be added later
         let kick_x = 0
@@ -233,10 +209,10 @@ class Tetrimino {
     }
 
     lock(well: Well) {
-        for (let row = this.tdata.offsets[0]; row < this.tdata.colors.length - this.tdata.offsets[2]; row++) {
-            for (let col = this.tdata.offsets[3]; col < this.tdata.colors.length - this.tdata.offsets[1]; col++) {
-                if (this.tdata.colors[row][col] != 0) {
-                    well.changeColor(this.x + col, this.y + row, this.tdata.colors[row][col])
+        for (let row = this.offsets[0]; row < this.colors.length - this.offsets[2]; row++) {
+            for (let col = this.offsets[3]; col < this.colors.length - this.offsets[1]; col++) {
+                if (this.colors[row][col] != 0) {
+                    well.changeColor(this.x + col, this.y + row, this.colors[row][col])
                 }
             }
         }
@@ -247,7 +223,7 @@ class Tetrimino {
     }
 
     collision(new_x: number, new_y: number, new_rotation: number): boolean {
-        if (new_x + this.tdata.offsets[3] >= 0 && new_x + this.tdata.colors.length - this.tdata.offsets[1] <= MATRIX_WIDTH) {
+        if (new_x + this.offsets[3] >= 0 && new_x + this.colors.length - this.offsets[1] <= MATRIX_WIDTH) {
 
             return false
         } else {
@@ -315,7 +291,37 @@ class Well {
 
 // EXT. FUNCTIONS -----------------------------------------
 
+function decode(id: number): number[][] {
+    let pattern_img = colors_data[id]
+    let colors = []
+    for (let row = 0; row < pattern_img.height; row++) {
+        colors.push([])
+        for (let col = 0; col < pattern_img.width; col++) {
+            colors[row].push(pattern_img.getPixel(col, row))
+        }
+    }
+    return colors
+}
+
+function encode(arr: number[][], ghost: boolean): Image {
+    let img = image.create(arr.length * CELL_SIZE, arr.length * CELL_SIZE)
+    for (let row = 0; row < arr.length; row++) {
+        for (let col = 0; col < arr.length; col++) {
+            if (arr[row][col] != 0) {
+                let color = arr[row][col]
+                if (ghost) {
+                    const color = 7
+                }
+                img.drawImage(tiles_data[color], col * CELL_SIZE, row * CELL_SIZE)
+            }
+        }
+    }
+    return img
+}
+
+
 function rotateArray(arr: number[][], cw: boolean): number[][] {
+
     for (let i = 0; i < arr.length; i++) {
         for (let j = 0; j < i; j++) {
             [arr[i][j], arr[j][i]] = [arr[j][i], arr[i][j]];
@@ -333,6 +339,35 @@ function rotateArray(arr: number[][], cw: boolean): number[][] {
         }
     }
     return arr
+}
+
+function print_well(well: Well) {
+    for (let i = 0; i < MATRIX_HEIGHT; i++) {
+        let s = " | "
+        for (let j = 0; j < MATRIX_WIDTH; j++) {
+            if (well.colors[i][j] == undefined) {
+                s += " | "
+            } else {
+                s += well.colors[i][j] + " | "
+            }
+        }
+        console.log(s)
+    }
+}
+
+function printArray(arr: number[][]) {
+    let s = ""
+    for (let i = 0; i < arr.length; i++) {
+        for (let j = 0; j < arr[i].length; j++) {
+            if (arr[i][j] != 0) {
+                s += "|_|"
+            } else {
+                s += "   "
+            }
+        }
+        s += "\r\n"
+    }
+    console.log(s)
 }
 
 function updateStats() {
@@ -357,25 +392,38 @@ const Y0 = 5
 
 // DATA ---------------------------------------------------
 
-/* const shapes: Image[] = [
-    assets.image`I`,
-    assets.image`J`,
-    assets.image`L`,
-    assets.image`O`,
-    assets.image`S`,
-    assets.image`T`,
-    assets.image`Z`,
-    assets.image`I0`,
-    assets.image`J0`,
-    assets.image`L0`,
-    assets.image`O0`,
-    assets.image`S0`,
-    assets.image`T0`,
-    assets.image`Z0`
+const colors_data = [
+    assets.image`data_I`,
+    assets.image`data_J`,
+    assets.image`data_L`,
+    assets.image`data_O`,
+    assets.image`data_S`,
+    assets.image`data_T`,
+    assets.image`data_Z`
+]
 
-] */
+const tiles_data = [
+    assets.image`tile_I`,
+    assets.image`tile_J`,
+    assets.image`tile_L`,
+    assets.image`tile_O`,
+    assets.image`tile_S`,
+    assets.image`tile_T`,
+    assets.image`tile_Z`,
+    assets.image`tile_ghost`
+]
 
-const shapes_data = [
+const offsets_data = [
+    [1, 0, 2, 0],
+    [0, 0, 1, 0],
+    [0, 0, 1, 0],
+    [0, 0, 0, 0],
+    [0, 0, 1, 0],
+    [0, 0, 1, 0],
+    [0, 0, 1, 0]
+]
+
+/* const shapes_data = [
     {
         colors: [
             [0, 0, 0, 0],
@@ -453,36 +501,7 @@ const shapes_data = [
         img: assets.image`Z`,
         ghost_img: assets.image`Z0`
     }
-]
-
-const offsets = [   // [shape: 0..6][rotation --> pop / unshift][direction: top, right, bottom, left]
-    [1, 0, 2, 0],
-    [0, 0, 1, 0],
-    [0, 0, 1, 0],
-    [0, 0, 0, 0],
-    [0, 0, 1, 0],
-    [0, 0, 1, 0],
-    [0, 0, 1, 0]
-]
-
-/* 
-const heights = [
-    [2, 4, 3, 4],
-    [2, 3, 3, 3],
-    [2, 3, 3, 3],
-    [2, 2, 2, 2],
-    [2, 3, 3, 3],
-    [2, 3, 3, 3],
-    [2, 3, 3, 3]
-]
- */
-
-enum Rotation {
-    Z = 0,
-    R = 1,
-    T = 2,
-    L = 3
-}
+] */
 
 // UI -----------------------------------------------------
 

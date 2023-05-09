@@ -295,6 +295,112 @@ c c c c c c . . . c . . . . .
 . . . . . . . . . . . . . . . 
 . . . . . . . . . . . . . . . 
 `;
+            case "image20":
+            case "data_I":return img`
+. . . . 
+9 9 9 9 
+. . . . 
+. . . . 
+`;
+            case "image21":
+            case "data_J":return img`
+8 . . 
+8 8 8 
+. . . 
+`;
+            case "image22":
+            case "data_L":return img`
+. . 4 
+4 4 4 
+. . . 
+`;
+            case "image23":
+            case "data_O":return img`
+5 5 
+5 5 
+`;
+            case "image24":
+            case "data_S":return img`
+. 7 7 
+7 7 . 
+. . . 
+`;
+            case "image25":
+            case "data_T":return img`
+a a a 
+. a . 
+. . . 
+`;
+            case "image26":
+            case "data_Z":return img`
+2 2 . 
+. 2 2 
+. . . 
+`;
+            case "image27":
+            case "tile_I":return img`
+9 9 9 9 9 
+9 1 1 1 9 
+9 1 9 9 9 
+9 9 9 9 9 
+9 9 9 9 9 
+`;
+            case "image28":
+            case "tile_J":return img`
+8 8 8 8 8 
+8 9 9 9 8 
+8 9 8 8 8 
+8 8 8 8 8 
+8 8 8 8 8 
+`;
+            case "image30":
+            case "tile_O":return img`
+5 5 5 5 5 
+5 1 1 1 5 
+5 1 5 5 5 
+5 5 5 5 5 
+5 5 5 5 5 
+`;
+            case "image31":
+            case "tile_S":return img`
+7 7 7 7 7 
+7 1 1 1 7 
+7 1 7 7 7 
+7 7 7 7 7 
+7 7 7 7 7 
+`;
+            case "image32":
+            case "tile_T":return img`
+a a a a a 
+a d d d a 
+a d a a a 
+a a a a a 
+a a a a a 
+`;
+            case "image33":
+            case "tile_Z":return img`
+2 2 2 2 2 
+2 d d d 2 
+2 d 2 2 2 
+2 2 2 2 2 
+2 2 2 2 2 
+`;
+            case "image29":
+            case "tile_L":return img`
+4 4 4 4 4 
+4 d d d 4 
+4 d 4 4 4 
+4 4 4 4 4 
+4 4 4 4 4 
+`;
+            case "image34":
+            case "tile_ghost":return img`
+c c c c c 
+c . . . c 
+c . c c c 
+c c c c c 
+c c c c c 
+`;
         }
         return null;
     })
