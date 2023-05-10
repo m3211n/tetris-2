@@ -105,7 +105,7 @@ class Tetrimino {
         this.x = new_x
         this.y = new_y
         this.rotation = r
-        console.log(`This is shapeID ${this.shapeID} and rotation ${this.rotation}`)
+        // console.log(`This is shapeID ${this.shapeID} and rotation ${this.rotation}`)
         let img = this.img
         if (this.rotation != 0) {
             img = img.rotated(this.rotation * 90)
@@ -117,7 +117,7 @@ class Tetrimino {
         let x = X0 + (this.x * CELL_SIZE + this.piece.width / 2)
         let y = Y0 + (this.y * CELL_SIZE + this.piece.height / 2)
         this.piece.setPosition(x, y)
-        print_piece(this.colors)
+        // print_piece(this.colors)
         this.spawn_ghost()
     }
 
@@ -132,47 +132,47 @@ class Tetrimino {
         this.ghost_piece.setPosition(x, y)
     }
 
-    strafe(x_inc: number) {
-        let new_x = this.x + x_inc
-        if (!this.collision(new_x, this.y, this.rotation)) {
-            this.respawnAt(new_x, this.y, this.rotation)
-        }
-    }
-
     private sonar(well: Well): number { /* returns min possible drop depth (pitfall) the current piece */
-        
-        let piece_bottom = this.y - this.colors.length + this.offsets[2]
+        let piece_bottom = this.y + this.colors.length - this.offsets[2]
         let pitfall = MATRIX_HEIGHT - piece_bottom
-        // console.log(`----- >> Starting with pitfall = ${pitfall}`)
+        // console.log(`----- >> Starting with pitfall = ${pitfall} piece_bottom = ${piece_bottom}`)
+        // let s = "" 
         for (let col = this.offsets[3]; col < this.colors.length - this.offsets[1]; col++) {
             let piece_column_bottom_hole = 0
             for (let row = this.colors.length - this.offsets[2] - 1; row >= this.offsets[0]; row--) {
-                // console.log(`Color at ${row}, ${col} is ${this.tdata.colors[row][col]}`)
+                // console.log(`Color at ${row}, ${col} is ${this.colors[row][col]}`)
                 if (this.colors[row][col] != 0) {
+                    const col_bottom = piece_bottom - piece_column_bottom_hole
                     // console.log(`Found bottom element at [${row}, ${col}]`)
-                    const wellColumn = well.cell_col(col + this.x)
-/* 
-                    let s = ""
+                    const wellColumn = well.cell_col(col + this.x).slice(col_bottom)
                     for (let index = 0; index < wellColumn.length; index++) {
-                        s += wellColumn[index]
+                        // s += wellColumn[index]
                     }
- */
-                    let peak = wellColumn.indexOf(1)
-                    if (peak == -1) {
-                        peak = MATRIX_HEIGHT
+                    let index = wellColumn.indexOf(1)
+                    if (index == -1) {
+                        index = wellColumn.length
                     }
-                    let col_pitfall = peak - this.y - this.colors.length + this.offsets[2] + piece_column_bottom_hole
-                    // console.log(`Column [${col + this.x}] : ${s} Peak = ${peak}; Column pitfall = ${col_pitfall}`)
-                    if (col_pitfall < pitfall) {
-                        pitfall = col_pitfall
+                    let col_pitfall = index
+                    // s += "\n"
+                    if (index < pitfall) {
+                        pitfall = index
                     }
                     break
                 }
                 piece_column_bottom_hole ++
             }            
         }
-        // console.log(`<< New pitfall = ${pitfall}`)
+        // console.log(`${s}`)
+        console.log(`<< Piece pitfall = ${pitfall}`)
         return pitfall
+    }
+    
+    strafe(x_inc: number) {
+        const new_x = this.x + x_inc
+        const collision = (new_x + this.offsets[3] < 0 || new_x + this.colors.length - this.offsets[1] > MATRIX_WIDTH)
+        if (!collision && !this.cellCollision(new_x, this.y)) {
+            this.respawnAt(new_x, this.y, this.rotation)
+        }
     }
 
     rotate(cw: boolean) {
@@ -190,21 +190,27 @@ class Tetrimino {
         }
         let tmp_array = this.colors
         this.colors = rotateArray(tmp_array, cw)
-        // this.print_piece(tmp_array)
-        // this.print_piece(this.tdata.colors)
         let canRotate = true // wall kicks to be added later
         let kick_x = 0
         let kick_y = 0
-        // console.log(this.tdata.offsets[0] +" "+ this.tdata.offsets[1] +" "+ this.tdata.offsets[2] +" "+ this.tdata.offsets[3])
         if (canRotate) {
             this.respawnAt(this.x + kick_x, this.y + kick_y, next_rotation)
         }
     }
 
     drop(hard: boolean) {
-        this.respawnAt(this.x, (hard ? this.pitfall : this.y + 1), this.rotation)
-        if (this.y == this.y + this.pitfall) {
+        if (hard) {
+            this.respawnAt(this.x, this.y + this.pitfall, this.rotation)
             lock()
+        } else {
+            console.log("Soft drop")
+            const new_y = this.y + 1
+            const collision = (this.pitfall == 0)
+            if (!collision && !this.cellCollision(this.x, new_y)) {
+                this.respawnAt(this.x, this.y + 1, this.rotation)
+            } else {
+                lock()
+            }
         }
     }
 
@@ -213,13 +219,17 @@ class Tetrimino {
         this.ghost_piece.destroy()
     }
 
-    collision(new_x: number, new_y: number, new_rotation: number): boolean {
-        if (new_x + this.offsets[3] >= 0 && new_x + this.colors.length - this.offsets[1] <= MATRIX_WIDTH) {
-
-            return false
-        } else {
-            return true
+    cellCollision(new_x: number, new_y: number): boolean {
+        console.log("Checking cell collisions...")
+        for (let t_row = this.offsets[0]; t_row < this.colors.length - this.offsets[2]; t_row++) {
+            for (let t_col = this.offsets[3]; t_col < this.colors.length - this.offsets[1]; t_col++) {
+                if (this.colors[t_row][t_col] != 0 && well.cells[t_row + new_y][t_col + new_x] == 1) {
+                    console.log("Collision!!!")
+                    return true
+                }
+            }
         }
+        return false
     }
 }
 
@@ -248,8 +258,8 @@ class Well {
     changeColor(x: number, y: number, c: number) {
         this.colors[y][x] = c
         this.cells[y][x] = 1
-        console.log(`Writing to colors[${y}, ${x}] value ${c})`)
-        console.log(`Writing to cells[${y}, ${x}] value ${1})`)
+        // console.log(`Writing to colors[${y}, ${x}] value ${c})`)
+        // console.log(`Writing to cells[${y}, ${x}] value ${1})`)
 
     }
 
@@ -331,7 +341,7 @@ function lock() {
     for (let row = tetrimino.offsets[0]; row < tetrimino.colors.length - tetrimino.offsets[2]; row++) {
         for (let col = tetrimino.offsets[3]; col < tetrimino.colors.length - tetrimino.offsets[1]; col++) {
             if (tetrimino.colors[row][col] != 0) {
-                console.log(`Calling changeColor(${tetrimino.x + col}, ${tetrimino.y + row}, ${tetrimino.colors[row][col]})`)
+                // console.log(`Calling changeColor(${tetrimino.x + col}, ${tetrimino.y + row}, ${tetrimino.colors[row][col]})`)
                 well.changeColor(tetrimino.x + col, tetrimino.y + row, tetrimino.colors[row][col])
             }
         }
@@ -341,7 +351,7 @@ function lock() {
     tetrimino = new Tetrimino(bag.deal())
 
     // print_piece()
-    print_well()
+    // print_well()
 }
 
 function levelUp() {
@@ -471,6 +481,35 @@ const shapes_pixel_data = [
     }
 ]
 
+const wall_kick_data = [
+    [[-1, 0], [-1, 1], [0, -2], [-1, -2]],  // 0 -> R
+    [[1, 0], [1, 1], [0, -2], [1, -2]],     // 0 -> L
+
+    [[1, 0], [1, -1], [0, 2], [1, 2]],      // R -> 2
+    [[1, 0], [1, -1], [0, 2], [1, 2]],      // R -> 0
+
+    [[1, 0], [1, 1], [0, -2], [1, -2]],     // 2 -> L
+    [[-1, 0], [-1, 1], [0, -2], [-1, -2]],  // 2 -> R
+
+    [[-1, 0], [-1, -1], [0, 2], [-1, 2]],   // L -> 0
+    [[-1, 0], [-1, -1], [0, 2], [-1, 2]]    // L -> 2
+]
+
+const wall_kick_data_I = [
+    [[-2, 0], [1, 0], [-2, -1], [1, 2]],    // 0 -> R
+    [[-1, 0], [+2, 0], [-1, 2], [2, -1]],   // 0 -> L
+
+    [[-1, 0], [2, 0], [-1, 2], [2, -1]],    // R -> 2
+    [[2, 0], [-1, 0], [+2, +1], [-1, -2]],  // R -> 0
+
+    [[2, 0], [-1, 0], [2, 1], [-1, -2]],    // 2 -> L
+    [[1, 0], [-2, 0], [1, -2], [-2, -2]],   // 2 -> R
+
+    [[1, 0], [-2, -0], [1, -2], [-2, 1]],   // L -> 0
+    [[-2, 0], [1, 0], [-2, -1], [1, 2]]     // L -> 2
+]
+
+
 /* 
 const offsets = [   // [shape: 0..6][rotation --> pop / unshift][direction: top, right, bottom, left]
     [1, 0, 2, 0],
@@ -506,6 +545,7 @@ enum Rotation {
 let bg = image.create(160, 120)
 bg.fillRect(X0 - 3, Y0 - 3, 56, 116, 11)          // Matrix
 bg.fillRect(X0 - 1, Y0 - 1, 52, 112, 0)
+bg.fillRect(X0, Y0 + 10, 50, 1, 12)
 scene.setBackgroundImage(bg)
 
 // STATS --------------------------------------------------
