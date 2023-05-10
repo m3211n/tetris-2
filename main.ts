@@ -5,7 +5,7 @@ class Bag {
     constructor() {
         this.contents = []
         this.fill()
-        this.preview = sprites.create(image.create(4 * CELL_SIZE, 15 * CELL_SIZE))
+        this.preview = sprites.create(image.create(4 * C_SIZE, 15 * C_SIZE))
         this.preview.setPosition(134, 73)
     }
 
@@ -40,42 +40,42 @@ class Bag {
 }
 
 class Tetrimino {
-    shapeID: number
+    id: number
     img: Image
-    ghost_img: Image
+    g_img: Image
     colors: number[][]
-    offsets: number[]
-    rotation: number
+    offs: number[]
+    rot: number
     x: number
     y: number
-    piece: Sprite
-    pitfall: number
+    s: Sprite
+    pit: number
 
-    private ghost_piece: Sprite
+    private g_s: Sprite
 
     constructor(id: number) {
-        this.shapeID = id
+        this.id = id
         this.img = shapes_pixel_data[id].img
-        this.ghost_img = shapes_pixel_data[id].ghost_img
-        if (this.piece && this.ghost_piece) {
-            this.piece.destroy()
-            this.ghost_piece.destroy()
+        this.g_img = shapes_pixel_data[id].ghost_img
+        if (this.s && this.g_s) {
+            this.s.destroy()
+            this.g_s.destroy()
         }
-        this.piece = sprites.create(image.create(0, 0))
-        this.piece.z = 2
-        this.ghost_piece = sprites.create(image.create(0, 0))
-        this.ghost_piece.z = 1
-        this.respawnAt((this.shapeID == 3 ? 4 : 3), 0, Rotation.Z)
+        this.s = sprites.create(image.create(0, 0))
+        this.s.z = 2
+        this.g_s = sprites.create(image.create(0, 0))
+        this.g_s.z = 1
+        this.respawnAt((this.id == 3 ? 4 : 3), 0, Rotation.Z)
     }
 
     private getColorsArray(): number[][] {
         let result: number[][] = []
-        let img = this.piece.image
-        let s = img.width / CELL_SIZE
+        let img = this.s.image
+        let s = img.width / C_SIZE
         for (let y = 0; y < s; y++) {
             result.push([])
             for (let x = 0; x < s; x++) {
-                let color = img.getPixel(x * CELL_SIZE, y * CELL_SIZE)
+                let color = img.getPixel(x * C_SIZE, y * C_SIZE)
                 result[y].push(color)
             }
         }
@@ -85,9 +85,9 @@ class Tetrimino {
 
     private getOffsets(r?: number): number[] {
         let result = []
-        if (this.shapeID == 0) {
+        if (this.id == 0) {
             result = [1, 0, 2, 0]
-        } else if (this.shapeID == 3) {
+        } else if (this.id == 3) {
             result = [0, 0, 0, 0]
         } else {
             result = [0, 0, 1, 0]
@@ -104,42 +104,42 @@ class Tetrimino {
         // Respawns and updates the rotation of the existing piece at the new location
         this.x = new_x
         this.y = new_y
-        this.rotation = r
+        this.rot = r
         // console.log(`This is shapeID ${this.shapeID} and rotation ${this.rotation}`)
         let img = this.img
-        if (this.rotation != 0) {
-            img = img.rotated(this.rotation * 90)
+        if (this.rot != 0) {
+            img = img.rotated(this.rot * 90)
         }
-        this.piece.setImage(img)
+        this.s.setImage(img)
         this.colors = this.getColorsArray()
-        this.offsets = this.getOffsets(this.rotation)
-        this.pitfall = this.sonar(well)
-        let x = X0 + (this.x * CELL_SIZE + this.piece.width / 2)
-        let y = Y0 + (this.y * CELL_SIZE + this.piece.height / 2)
-        this.piece.setPosition(x, y)
+        this.offs = this.getOffsets(this.rot)
+        this.pit = this.sonar(well)
+        let x = X0 + (this.x * C_SIZE + this.s.width / 2)
+        let y = Y0 + (this.y * C_SIZE + this.s.height / 2)
+        this.s.setPosition(x, y)
         // print_piece(this.colors)
         this.spawn_ghost()
     }
 
     private spawn_ghost() {
-        let img = this.ghost_img
-        if (this.rotation != 0) {
-            img = img.rotated(this.rotation * 90)
+        let img = this.g_img
+        if (this.rot != 0) {
+            img = img.rotated(this.rot * 90)
         }
-        this.ghost_piece.setImage(img)
-        let x = X0 + (this.x * CELL_SIZE + this.ghost_piece.width / 2)
-        let y = Y0 + ((this.y + this.pitfall) * CELL_SIZE + this.ghost_piece.height / 2)
-        this.ghost_piece.setPosition(x, y)
+        this.g_s.setImage(img)
+        let x = X0 + (this.x * C_SIZE + this.g_s.width / 2)
+        let y = Y0 + ((this.y + this.pit) * C_SIZE + this.g_s.height / 2)
+        this.g_s.setPosition(x, y)
     }
 
     private sonar(well: Well): number { /* returns min possible drop depth (pitfall) the current piece */
-        let piece_bottom = this.y + this.colors.length - this.offsets[2]
-        let pitfall = MATRIX_HEIGHT - piece_bottom
+        let piece_bottom = this.y + this.colors.length - this.offs[2]
+        let pitfall = MATRIX_H - piece_bottom
         // console.log(`----- >> Starting with pitfall = ${pitfall} piece_bottom = ${piece_bottom}`)
         // let s = "" 
-        for (let col = this.offsets[3]; col < this.colors.length - this.offsets[1]; col++) {
+        for (let col = this.offs[3]; col < this.colors.length - this.offs[1]; col++) {
             let piece_column_bottom_hole = 0
-            for (let row = this.colors.length - this.offsets[2] - 1; row >= this.offsets[0]; row--) {
+            for (let row = this.colors.length - this.offs[2] - 1; row >= this.offs[0]; row--) {
                 // console.log(`Color at ${row}, ${col} is ${this.colors[row][col]}`)
                 if (this.colors[row][col] != 0) {
                     const col_bottom = piece_bottom - piece_column_bottom_hole
@@ -169,45 +169,45 @@ class Tetrimino {
     
     strafe(x_inc: number) {
         const new_x = this.x + x_inc
-        const collision = (new_x + this.offsets[3] < 0 || new_x + this.colors.length - this.offsets[1] > MATRIX_WIDTH)
+        const collision = (new_x + this.offs[3] < 0 || new_x + this.colors.length - this.offs[1] > MATRIX_W)
         if (!collision && !this.cellCollision(new_x, this.y)) {
-            this.respawnAt(new_x, this.y, this.rotation)
+            this.respawnAt(new_x, this.y, this.rot)
         }
     }
 
     rotate(cw: boolean) {
         let next_rotation
         if (cw) {
-            next_rotation = this.rotation + 1
+            next_rotation = this.rot + 1
             if (next_rotation > 3) {
                 next_rotation = 0
             }
         } else {
-            next_rotation = this.rotation - 1
+            next_rotation = this.rot - 1
             if (next_rotation < 0) {
                 next_rotation = 3
             }
         }
         let tmp_array = this.colors
-        this.colors = rotateArray(tmp_array, cw)
         let canRotate = true // wall kicks to be added later
         let kick_x = 0
         let kick_y = 0
         if (canRotate) {
+            this.colors = rotate(tmp_array, cw)
             this.respawnAt(this.x + kick_x, this.y + kick_y, next_rotation)
         }
     }
 
     drop(hard: boolean) {
         if (hard) {
-            this.respawnAt(this.x, this.y + this.pitfall, this.rotation)
+            this.respawnAt(this.x, this.y + this.pit, this.rot)
             lock()
         } else {
             console.log("Soft drop")
             const new_y = this.y + 1
-            const collision = (this.pitfall == 0)
+            const collision = (this.pit == 0)
             if (!collision && !this.cellCollision(this.x, new_y)) {
-                this.respawnAt(this.x, this.y + 1, this.rotation)
+                this.respawnAt(this.x, this.y + 1, this.rot)
             } else {
                 lock()
             }
@@ -215,15 +215,16 @@ class Tetrimino {
     }
 
     removeSprites() {
-        this.piece.destroy()
-        this.ghost_piece.destroy()
+        this.s.destroy()
+        this.g_s.destroy()
     }
 
     cellCollision(new_x: number, new_y: number): boolean {
+        const arr = this.colors
         console.log("Checking cell collisions...")
-        for (let t_row = this.offsets[0]; t_row < this.colors.length - this.offsets[2]; t_row++) {
-            for (let t_col = this.offsets[3]; t_col < this.colors.length - this.offsets[1]; t_col++) {
-                if (this.colors[t_row][t_col] != 0 && well.cells[t_row + new_y][t_col + new_x] == 1) {
+        for (let t_row = 0; t_row < arr.length; t_row++) {
+            for (let t_col = 0; t_col < arr.length; t_col++) {
+                if (arr[t_row][t_col] != 0 && well.cells[t_row + new_y][t_col + new_x] == 1) {
                     console.log("Collision!!!")
                     return true
                 }
@@ -234,25 +235,25 @@ class Tetrimino {
 }
 
 class Well {
-    private matrix: Sprite
+    private s: Sprite
     colors: number[][]
     cells: number[][]
 
     constructor() {
         this.colors = []
         this.cells = []
-        for (let i = 0; i < MATRIX_HEIGHT; i++) {
+        for (let i = 0; i < MATRIX_H; i++) {
             this.colors.push([])
             this.cells.push([])
-            for (let j = 0; j < MATRIX_WIDTH; j++) {
+            for (let j = 0; j < MATRIX_W; j++) {
                 this.colors[i].push(0)
                 this.cells[i].push(0)
             }
         }
-        this.matrix = sprites.create(image.create(MATRIX_WIDTH * CELL_SIZE, MATRIX_HEIGHT * CELL_SIZE))
-        this.matrix.image.fill(0)
-        this.matrix.setPosition(X0 + MATRIX_WIDTH * CELL_SIZE / 2, Y0 + MATRIX_HEIGHT * CELL_SIZE / 2)
-        this.matrix.z = 0
+        this.s = sprites.create(image.create(MATRIX_W * C_SIZE, MATRIX_H * C_SIZE))
+        this.s.image.fill(0)
+        this.s.setPosition(X0 + MATRIX_W * C_SIZE / 2, Y0 + MATRIX_H * C_SIZE / 2)
+        this.s.z = 0
     }
 
     changeColor(x: number, y: number, c: number) {
@@ -264,12 +265,12 @@ class Well {
     }
 
     update() {
-        this.matrix.image.fill(0)
-        for (let row = 0; row < MATRIX_HEIGHT; row++) {
-            for (let col = 0; col < MATRIX_WIDTH; col++) {
+        this.s.image.fill(0)
+        for (let row = 0; row < MATRIX_H; row++) {
+            for (let col = 0; col < MATRIX_W; col++) {
                 if (this.colors[row][col] != 0) {
                     // console.log("Painting rect at [" + row + ", " + col + "] with color " + this.colors[row][col])
-                    this.matrix.image.fillRect(col * CELL_SIZE, row * CELL_SIZE, CELL_SIZE, CELL_SIZE, this.colors[row][col])
+                    this.s.image.fillRect(col * C_SIZE, row * C_SIZE, C_SIZE, C_SIZE, this.colors[row][col])
                 }
             }
         }
@@ -277,11 +278,11 @@ class Well {
 
     checkRows() {
         let lc = 0
-        for (let row = 2; row < MATRIX_HEIGHT; row++) {
+        for (let row = 2; row < MATRIX_H; row++) {
             if (this.cells[row].indexOf(0) == -1) {
                 let empty_colors: number[] = []
                 let empty_cells: number[] = []
-                for (let index = 0; index < MATRIX_WIDTH; index++) {
+                for (let index = 0; index < MATRIX_W; index++) {
                     empty_colors.push(0)
                     empty_cells.push(0)
                 }
@@ -319,7 +320,7 @@ class Well {
 
     cell_row(i: number): number[] {
         let result = []
-        for (let j = 0; j < MATRIX_WIDTH; j++) {
+        for (let j = 0; j < MATRIX_W; j++) {
             result.push(this.cells[i][j])
         }
         return result
@@ -327,7 +328,7 @@ class Well {
 
     cell_col(j: number): number[] {
         let result = []
-        for (let i = 0; i < MATRIX_HEIGHT; i++) {
+        for (let i = 0; i < MATRIX_H; i++) {
             result.push(this.cells[i][j])
         }
         return result
@@ -338,17 +339,17 @@ class Well {
 // GAME FUNCTIONS -----------------------------------------
 
 function lock() {
-    for (let row = tetrimino.offsets[0]; row < tetrimino.colors.length - tetrimino.offsets[2]; row++) {
-        for (let col = tetrimino.offsets[3]; col < tetrimino.colors.length - tetrimino.offsets[1]; col++) {
-            if (tetrimino.colors[row][col] != 0) {
+    for (let row = t.offs[0]; row < t.colors.length - t.offs[2]; row++) {
+        for (let col = t.offs[3]; col < t.colors.length - t.offs[1]; col++) {
+            if (t.colors[row][col] != 0) {
                 // console.log(`Calling changeColor(${tetrimino.x + col}, ${tetrimino.y + row}, ${tetrimino.colors[row][col]})`)
-                well.changeColor(tetrimino.x + col, tetrimino.y + row, tetrimino.colors[row][col])
+                well.changeColor(t.x + col, t.y + row, t.colors[row][col])
             }
         }
     }
     well.checkRows()
-    tetrimino.removeSprites()
-    tetrimino = new Tetrimino(bag.deal())
+    t.removeSprites()
+    t = new Tetrimino(bag.deal())
 
     // print_piece()
     // print_well()
@@ -377,8 +378,8 @@ function print_piece(piece: number[][]) {
 
 function print_well() {
     let s = "------------------------------"
-    for (let i = 0; i < MATRIX_HEIGHT; i++) {
-        for (let j = 0; j < MATRIX_WIDTH; j++) {
+    for (let i = 0; i < MATRIX_H; i++) {
+        for (let j = 0; j < MATRIX_W; j++) {
             if (well.colors[i][j] == 0) {
                 s += "   "
             } else {
@@ -390,7 +391,7 @@ function print_well() {
     console.log(s)
 }
 
-function rotateArray(arr: number[][], cw: boolean): number[][] {
+function rotate(arr: number[][], cw: boolean): number[][] {
     for (let i = 0; i < arr.length; i++) {
         for (let j = 0; j < i; j++) {
             [arr[i][j], arr[j][i]] = [arr[j][i], arr[i][j]];
@@ -423,10 +424,10 @@ function updateStats() {
 
 // SETTINGS -----------------------------------------------
 
-const CELL_SIZE = 5
+const C_SIZE = 5
 const NEXT_PIECES = 3
-const MATRIX_HEIGHT = 22
-const MATRIX_WIDTH = 10
+const MATRIX_H = 22
+const MATRIX_W = 10
 const X0 = 55
 const Y0 = 5
 
@@ -581,46 +582,44 @@ let highscore: number = 0
 
 let bag = new Bag()
 let well = new Well()
-let tetrimino = new Tetrimino(bag.deal())
-
-let im = image.create(10, 10)
+let t = new Tetrimino(bag.deal())
 
 updateStats()
 
 // CONTROLLER ---------------------------------------------
 
 controller.A.onEvent(ControllerButtonEvent.Pressed, function () {
-    tetrimino.rotate(true)
+    t.rotate(true)
 })
 
 controller.B.onEvent(ControllerButtonEvent.Pressed, function () {
-    tetrimino.rotate(false)
+    t.rotate(false)
 })
 
 controller.down.onEvent(ControllerButtonEvent.Repeated, function () {
-    tetrimino.drop(false)
+    t.drop(false)
 })
 
 controller.left.onEvent(ControllerButtonEvent.Repeated, function () {
-    tetrimino.strafe(-1)
+    t.strafe(-1)
 })
 
 controller.right.onEvent(ControllerButtonEvent.Repeated, function () {
-    tetrimino.strafe(1)
+    t.strafe(1)
 })
 
 controller.down.onEvent(ControllerButtonEvent.Pressed, function () {
-    tetrimino.drop(false)
+    t.drop(false)
 })
 
 controller.left.onEvent(ControllerButtonEvent.Pressed, function () {
-    tetrimino.strafe(-1)
+    t.strafe(-1)
 })
 
 controller.right.onEvent(ControllerButtonEvent.Pressed, function () {
-    tetrimino.strafe(1)
+    t.strafe(1)
 })
 
 controller.up.onEvent(ControllerButtonEvent.Pressed, function () {
-    tetrimino.drop(true)
+    t.drop(true)
 })
