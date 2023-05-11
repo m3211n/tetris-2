@@ -219,6 +219,7 @@ class Tetrimino {
     drop(hard: boolean) {
         if (hard) {
             this.respawnAt(this.x, this.y + this.pit, this.rot)
+            score += this.pit * 2
             lock()
         } else {
             const new_y = this.y + 1
