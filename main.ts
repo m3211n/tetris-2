@@ -25,7 +25,7 @@ class Bag {
     private updateQueue() {
         this.preview.image.fill(0)
         for (let i = 0; i < 3; i++) {
-            this.preview.image.drawImage(shapes_pixel_data[this.contents[i]].img, 0, i * 20 + 5)
+            this.preview.image.drawImage(shapes_pixel_data[this.contents[i]], 0, i * 20)
         }
     }
 
@@ -378,7 +378,7 @@ function getPieceColors(id: number, rot: number): number[][] {
         [[0, 3, 4, 5], [1, 2, 4, 7], [3, 4, 5, 8], [1, 4, 6, 7]],
         [[2, 3, 4, 5], [1, 4, 7, 8], [3, 4, 5, 6], [0, 1, 4, 7]],
         [[0, 1, 2, 3], [0, 1, 2, 3], [0, 1, 2, 3], [0, 1, 2, 3]],
-        [[1, 2, 3, 4], [1, 4, 5, 8], [4, 5, 6, 7], [3, 4, 5, 7]],
+        [[1, 2, 3, 4], [1, 4, 5, 8], [4, 5, 6, 7], [0, 3, 4, 7]],
         [[1, 3, 4, 5], [1, 4, 5 ,7], [3, 4, 5, 7], [1, 3, 4, 7]],
         [[0, 1, 4, 5], [2, 4, 5, 7], [3, 4, 7 ,8], [1, 3 ,4 ,6]]
     ]
@@ -388,10 +388,10 @@ function getPieceColors(id: number, rot: number): number[][] {
         matrix.push([])
         for (let c = 0; c < max; c++) {
             if (shapes[id][rot][i] % max == c && Math.floor(shapes[id][rot][i] / max) == r) {
-                matrix[r].push(id)
+                matrix[r].push(tetris_colors[id])
                 i++
             } else {
-                matrix[r].push(null)
+                matrix[r].push(0)
             }
         }
     }
@@ -406,6 +406,7 @@ function getPieceImage(colors: number[][]): [Image, Image] {
             if (colors[y][x] != 0) {
                 img.fillRect(x * C_SIZE, y * C_SIZE, C_SIZE, C_SIZE, colors[y][x])
                 ghost_img.fillRect(x * C_SIZE, y * C_SIZE, C_SIZE, C_SIZE, 12)
+                ghost_img.fillRect(x * C_SIZE + 1, y * C_SIZE + 1, C_SIZE - 2, C_SIZE - 2, 0)
             }
         }
     }
@@ -503,35 +504,16 @@ const Y0 = 5
 
 // DATA ---------------------------------------------------
 
+const tetris_colors = [9, 8, 4, 5, 7, 10, 2]
+
 const shapes_pixel_data = [
-    {
-        img: assets.image`I`,
-        ghost_img: assets.image`I0`
-    },
-    {
-        img: assets.image`J`,
-        ghost_img: assets.image`J0`
-    },
-    {
-        img: assets.image`L`,
-        ghost_img: assets.image`L0`
-    },
-    {
-        img: assets.image`O`,
-        ghost_img: assets.image`O0`
-    },
-    {
-        img: assets.image`S`,
-        ghost_img: assets.image`S0`
-    },
-    {
-        img: assets.image`T`,
-        ghost_img: assets.image`T0`
-    },
-    {
-        img: assets.image`Z`,
-        ghost_img: assets.image`Z0`
-    }
+    assets.image`I`,
+    assets.image`J`,
+    assets.image`L`,
+    assets.image`O`,
+    assets.image`S`,
+    assets.image`T`,
+    assets.image`Z`
 ]
 
 const shapes = [
