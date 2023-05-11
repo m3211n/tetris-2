@@ -220,6 +220,7 @@ class Tetrimino {
         if (hard) {
             this.respawnAt(this.x, this.y + this.pit, this.rot)
             score += this.pit * 2
+            updateStats()
             lock()
         } else {
             const new_y = this.y + 1
