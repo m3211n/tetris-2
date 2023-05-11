@@ -41,8 +41,8 @@ class Bag {
 
 class Tetrimino {
     id: number
-    img: Image
-    g_img: Image
+    // img: Image
+    // g_img: Image
     colors: number[][]
     offs: number[]
     rot: number
@@ -55,8 +55,8 @@ class Tetrimino {
 
     constructor(id: number) {
         this.id = id
-        this.img = shapes_pixel_data[id].img
-        this.g_img = shapes_pixel_data[id].ghost_img
+        // this.img = shapes_pixel_data[id].img
+        // this.g_img = shapes_pixel_data[id].ghost_img
         if (this.s && this.g_s) {
             this.s.destroy()
             this.g_s.destroy()
@@ -105,25 +105,23 @@ class Tetrimino {
         this.y = new_y
         this.rot = r
         // console.log(`This is shapeID ${this.shapeID} and rotation ${this.rotation}`)
-        let img = this.img
         if (this.rot != 0) {
-            img = img.rotated(this.rot * 90)
+            this.s.setImage(shapes_pixel_data[this.id].img.rotated(this.rot * 90))
+        } else {
+            this.s.setImage(shapes_pixel_data[this.id].img)
         }
-        this.s.setImage(img)
         this.colors = this.getColorsArray()
         this.offs = this.getOffsets(this.rot)
         this.pit = this.sonar(well)
         let x = X0 + (this.x * C_SIZE + this.s.width / 2)
         let y = Y0 + (this.y * C_SIZE + this.s.height / 2)
         this.s.setPosition(x, y)
-        // print_piece(this.colors)
 
-        /* Spawn ghost */
-        let g_img = this.g_img
         if (this.rot != 0) {
-            g_img = g_img.rotated(this.rot * 90)
+            this.g_s.setImage(shapes_pixel_data[this.id].ghost_img.rotated(this.rot * 90))
+        } else {
+            this.g_s.setImage(shapes_pixel_data[this.id].ghost_img)
         }
-        this.g_s.setImage(g_img)
         let g_x = X0 + (this.x * C_SIZE + this.g_s.width / 2)
         let g_y = Y0 + ((this.y + this.pit) * C_SIZE + this.g_s.height / 2)
         this.g_s.setPosition(g_x, g_y)
