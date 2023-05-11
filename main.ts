@@ -80,7 +80,6 @@ class Tetrimino {
             }
         }
         return result
-
     }
 
     private getOffsets(r?: number): number[] {
@@ -118,59 +117,116 @@ class Tetrimino {
         let y = Y0 + (this.y * C_SIZE + this.s.height / 2)
         this.s.setPosition(x, y)
         // print_piece(this.colors)
-        this.spawn_ghost()
-    }
 
-    private spawn_ghost() {
-        let img = this.g_img
+        /* Spawn ghost */
+        let g_img = this.g_img
         if (this.rot != 0) {
-            img = img.rotated(this.rot * 90)
+            g_img = g_img.rotated(this.rot * 90)
         }
-        this.g_s.setImage(img)
-        let x = X0 + (this.x * C_SIZE + this.g_s.width / 2)
-        let y = Y0 + ((this.y + this.pit) * C_SIZE + this.g_s.height / 2)
-        this.g_s.setPosition(x, y)
+        this.g_s.setImage(g_img)
+        let g_x = X0 + (this.x * C_SIZE + this.g_s.width / 2)
+        let g_y = Y0 + ((this.y + this.pit) * C_SIZE + this.g_s.height / 2)
+        this.g_s.setPosition(g_x, g_y)
     }
 
-    private sonar(well: Well): number { /* returns min possible drop depth (pitfall) the current piece */
-        let piece_bottom = this.y + this.colors.length - this.offs[2]
-        let pitfall = MATRIX_H - piece_bottom
+    
+    private sonar(well: Well): number { 
+
+        /* 
+        returns max possible drop depth (pitfall) the current piece
+        considering the holes in the bottom of the piece
+        */
+
+        const piece_btm = this.y + this.colors.length - this.offs[2]
+        let pitfall = MATRIX_H - piece_btm
         // console.log(`----- >> Starting with pitfall = ${pitfall} piece_bottom = ${piece_bottom}`)
         // let s = "" 
         for (let col = this.offs[3]; col < this.colors.length - this.offs[1]; col++) {
-            let piece_column_bottom_hole = 0
+            let piece_hole_depth = 0
             for (let row = this.colors.length - this.offs[2] - 1; row >= this.offs[0]; row--) {
                 // console.log(`Color at ${row}, ${col} is ${this.colors[row][col]}`)
                 if (this.colors[row][col] != 0) {
-                    const col_bottom = piece_bottom - piece_column_bottom_hole
+                    const col_btm = piece_btm - piece_hole_depth
                     // console.log(`Found bottom element at [${row}, ${col}]`)
-                    const wellColumn = well.cell_col(col + this.x).slice(col_bottom)
+                    const wellColumn = well.cell_col(col + this.x).slice(col_btm)
+/* 
                     for (let index = 0; index < wellColumn.length; index++) {
-                        // s += wellColumn[index]
+                        s += wellColumn[index]
                     }
+ */
                     let index = wellColumn.indexOf(1)
                     if (index == -1) {
                         index = wellColumn.length
                     }
-                    let col_pitfall = index
                     // s += "\n"
                     if (index < pitfall) {
                         pitfall = index
                     }
                     break
                 }
-                piece_column_bottom_hole ++
+                piece_hole_depth ++
             }            
         }
         // console.log(`${s}`)
-        console.log(`<< Piece pitfall = ${pitfall}`)
+        // console.log(`<< Piece pitfall = ${pitfall}`)
         return pitfall
+    }
+
+    private collisionForecast(new_x: number, new_y: number, new_rot: number): boolean {
+
+        let arr: number[][]
+        let offs: number[]
+
+        /*
+        If new_rot is different from the current rotation, we need to create
+        a copy of the current piece matrix, rotate it and generate offsets array for it
+        If rotation is not about to occur, we just take the current piece matrix and
+        offsets
+        */
+        
+        if (new_rot != this.rot) { /* if this is a forecast for rotation */
+            arr = this.getColorsArray()
+            offs = this.getOffsets(new_rot)
+            let cw = new_rot - this.rot == 1 ? true : false
+            rotateArray(arr, cw)
+
+            printPiece(arr)
+            printArray(offs)
+
+            for (let t_row = offs[0]; t_row < arr.length - offs[2]; t_row++) {
+                for (let t_col = offs[3]; t_col < arr.length - offs[1]; t_col++) {
+                    const left_wall_collision = t_col + new_x < 0
+                    const right_wall_collision = t_col + new_x > MATRIX_W - 1
+                    const floor_collision = t_row + new_y > MATRIX_H
+                    const cell_collision = well.cells[t_row + new_y][t_col + new_x] == 1
+                    if (arr[t_row][t_col] != 0 && (left_wall_collision || right_wall_collision || floor_collision || cell_collision))  {
+                        console.log("Collision!!!")
+                        console.log(`left = ${left_wall_collision} right = ${right_wall_collision} floor = ${floor_collision} cell = ${cell_collision}`)
+                        return true
+                    }
+                }
+            }
+        } else { /* if this is a forecast for movement */
+            arr = this.colors
+            offs = this.offs
+            // Wall collision when moving
+            if (new_x + offs[3] < 0 || new_x + arr.length - offs[1] > MATRIX_W) {
+                return true
+            }
+            // Floor collision when moving 
+            if (this.pit == 0) {
+                return true
+            }
+        } 
+
+        // No collisions
+        return false
     }
     
     strafe(x_inc: number) {
         const new_x = this.x + x_inc
-        const collision = (new_x + this.offs[3] < 0 || new_x + this.colors.length - this.offs[1] > MATRIX_W)
-        if (!collision && !this.cellCollision(new_x, this.y)) {
+        // const collision = (new_x + this.offs[3] < 0 || new_x + this.colors.length - this.offs[1] > MATRIX_W)
+        if (!this.collisionForecast(new_x, this.y, this.rot)) {
             this.respawnAt(new_x, this.y, this.rot)
         }
     }
@@ -188,12 +244,29 @@ class Tetrimino {
                 next_rotation = 3
             }
         }
-        let tmp_array = this.colors
-        let canRotate = true // wall kicks to be added later
+
+        const rotation_index = this.rot * 2 + (cw ? 0 : 1)
+        const wall_kick_tests = (this.id == 0 ? wall_kick_data_I[rotation_index] : wall_kick_data[rotation_index])
+
+        print2DArray(wall_kick_tests)
+
+        let canRotate = false
         let kick_x = 0
         let kick_y = 0
+
+        for (let test = 0; test < 5; test++) {
+            if (!this.collisionForecast(this.x + wall_kick_tests[test][0], this.y - wall_kick_tests[test][1], next_rotation)) {
+                canRotate = true
+                kick_x = wall_kick_tests[test][0]
+                kick_y = -wall_kick_tests[test][1]
+                break
+            }
+        }
+
+        console.log(`Wall kick: x = ${kick_x} y = ${kick_y} canRotate = ${canRotate}`)
+
         if (canRotate) {
-            this.colors = rotate(tmp_array, cw)
+            rotateArray(this.colors, cw)
             this.respawnAt(this.x + kick_x, this.y + kick_y, next_rotation)
         }
     }
@@ -203,10 +276,10 @@ class Tetrimino {
             this.respawnAt(this.x, this.y + this.pit, this.rot)
             lock()
         } else {
-            console.log("Soft drop")
+            // console.log("Soft drop!!!!!")
             const new_y = this.y + 1
-            const collision = (this.pit == 0)
-            if (!collision && !this.cellCollision(this.x, new_y)) {
+            // const collision = (this.pit == 0)
+            if (!this.collisionForecast(this.x, new_y, this.rot)) {
                 this.respawnAt(this.x, this.y + 1, this.rot)
             } else {
                 lock()
@@ -217,20 +290,6 @@ class Tetrimino {
     removeSprites() {
         this.s.destroy()
         this.g_s.destroy()
-    }
-
-    cellCollision(new_x: number, new_y: number): boolean {
-        const arr = this.colors
-        console.log("Checking cell collisions...")
-        for (let t_row = 0; t_row < arr.length; t_row++) {
-            for (let t_col = 0; t_col < arr.length; t_col++) {
-                if (arr[t_row][t_col] != 0 && well.cells[t_row + new_y][t_col + new_x] == 1) {
-                    console.log("Collision!!!")
-                    return true
-                }
-            }
-        }
-        return false
     }
 }
 
@@ -347,6 +406,9 @@ function lock() {
             }
         }
     }
+    if (t.y == 0) {
+        game.over(false)
+    }
     well.checkRows()
     t.removeSprites()
     t = new Tetrimino(bag.deal())
@@ -361,7 +423,7 @@ function levelUp() {
 
 // UTILITY FUNCTIONS --------------------------------------
 
-function print_piece(piece: number[][]) {
+function printPiece(piece: number[][]) {
     let s = "------------\r\n"
     for (let i = 0; i < piece.length; i++) {
         for (let j = 0; j < piece[i].length; j++) {
@@ -376,7 +438,7 @@ function print_piece(piece: number[][]) {
     console.log(s)
 }
 
-function print_well() {
+function printWell() {
     let s = "------------------------------"
     for (let i = 0; i < MATRIX_H; i++) {
         for (let j = 0; j < MATRIX_W; j++) {
@@ -391,7 +453,27 @@ function print_well() {
     console.log(s)
 }
 
-function rotate(arr: number[][], cw: boolean): number[][] {
+function printArray(arr: number[]) {
+    let s = "[ "
+    for (let elem of arr) {
+        s += elem + " "
+    }
+    s += "]"
+    console.log(s)
+}
+
+function print2DArray(arr: number[][]) {
+    let s = ""
+    for (let row of arr) {
+        for (let elem of row) {
+            s += elem + " "
+        }
+        s += "\n"
+    }
+    console.log(s)
+}
+
+function rotateArray(arr: number[][], cw: boolean) {
     for (let i = 0; i < arr.length; i++) {
         for (let j = 0; j < i; j++) {
             [arr[i][j], arr[j][i]] = [arr[j][i], arr[i][j]];
@@ -408,7 +490,6 @@ function rotate(arr: number[][], cw: boolean): number[][] {
             }
         }
     }
-    return arr
 }
 
 function updateStats() {
@@ -483,31 +564,31 @@ const shapes_pixel_data = [
 ]
 
 const wall_kick_data = [
-    [[-1, 0], [-1, 1], [0, -2], [-1, -2]],  // 0 -> R
-    [[1, 0], [1, 1], [0, -2], [1, -2]],     // 0 -> L
+    [[0, 0], [-1, 0], [-1, 1], [0, -2], [-1, -2]],  // 0: 0 cw
+    [[0, 0], [1, 0], [1, 1], [0, -2], [1, -2]],     // 1: 0 !cw
 
-    [[1, 0], [1, -1], [0, 2], [1, 2]],      // R -> 2
-    [[1, 0], [1, -1], [0, 2], [1, 2]],      // R -> 0
+    [[0, 0], [1, 0], [1, -1], [0, 2], [1, 2]],      // 2: 1 cw
+    [[0, 0], [1, 0], [1, -1], [0, 2], [1, 2]],      // 3: 1 !cw
 
-    [[1, 0], [1, 1], [0, -2], [1, -2]],     // 2 -> L
-    [[-1, 0], [-1, 1], [0, -2], [-1, -2]],  // 2 -> R
+    [[0, 0], [1, 0], [1, 1], [0, -2], [1, -2]],     // 4: 2 cw
+    [[0, 0], [-1, 0], [-1, 1], [0, -2], [-1, -2]],  // 5: 2 !cw
 
-    [[-1, 0], [-1, -1], [0, 2], [-1, 2]],   // L -> 0
-    [[-1, 0], [-1, -1], [0, 2], [-1, 2]]    // L -> 2
+    [[0, 0], [-1, 0], [-1, -1], [0, 2], [-1, 2]],   // 6: 3 cw
+    [[0, 0], [-1, 0], [-1, -1], [0, 2], [-1, 2]]    // 7: 3 !cw
 ]
 
 const wall_kick_data_I = [
-    [[-2, 0], [1, 0], [-2, -1], [1, 2]],    // 0 -> R
-    [[-1, 0], [+2, 0], [-1, 2], [2, -1]],   // 0 -> L
+    [[0, 0], [-2, 0], [1, 0], [-2, -1], [1, 2]],    // 0: 0 cw
+    [[0, 0], [-1, 0], [+2, 0], [-1, 2], [2, -1]],   // 1: 0 !cw
 
-    [[-1, 0], [2, 0], [-1, 2], [2, -1]],    // R -> 2
-    [[2, 0], [-1, 0], [+2, +1], [-1, -2]],  // R -> 0
+    [[0, 0], [-1, 0], [2, 0], [-1, 2], [2, -1]],    // 2: 1 cw
+    [[0, 0], [2, 0], [-1, 0], [+2, +1], [-1, -2]],  // 3: 1 !cw
 
-    [[2, 0], [-1, 0], [2, 1], [-1, -2]],    // 2 -> L
-    [[1, 0], [-2, 0], [1, -2], [-2, -2]],   // 2 -> R
+    [[0, 0], [2, 0], [-1, 0], [2, 1], [-1, -2]],    // 4: 2 cw
+    [[0, 0], [1, 0], [-2, 0], [1, -2], [-2, -2]],   // 5: 2 !cw
 
-    [[1, 0], [-2, -0], [1, -2], [-2, 1]],   // L -> 0
-    [[-2, 0], [1, 0], [-2, -1], [1, 2]]     // L -> 2
+    [[0, 0], [1, 0], [-2, -0], [1, -2], [-2, 1]],   // 6: 3 cw
+    [[0, 0], [-2, 0], [1, 0], [-2, -1], [1, 2]]     // 7: 3 !cw
 ]
 
 
