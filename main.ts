@@ -65,7 +65,7 @@ class Tetrimino {
         this.s.z = 2
         this.g_s = sprites.create(image.create(0, 0))
         this.g_s.z = 1
-        this.respawnAt((this.id == 3 ? 4 : 3), 0, Rotation.Z)
+        this.respawnAt((this.id == 3 ? 4 : 3), 0, 0)
     }
 
     private getColorsArray(): number[][] {
@@ -177,14 +177,53 @@ class Tetrimino {
         let arr: number[][]
         let offs: number[]
 
-        /*
-        If new_rot is different from the current rotation, we need to create
-        a copy of the current piece matrix, rotate it and generate offsets array for it
-        If rotation is not about to occur, we just take the current piece matrix and
-        offsets
-        */
+        console.log("Checking collisions")
+
+        // If new_rot is different from the current rotation, we need to create
+        // a copy of the current piece matrix, rotate it and generate offsets array for it
+        // If rotation is not about to occur, we just take the current piece matrix and
+        // offsets
         
         if (new_rot != this.rot) { /* if this is a forecast for rotation */
+            arr = this.getColorsArray()
+            offs = this.getOffsets(new_rot)
+            let cw = new_rot - this.rot == 1 ? true : false
+            rotateArray(arr, cw)
+        } else {
+            arr = this.colors
+            offs = this.offs
+        }
+        for (let t_row = offs[0]; t_row < arr.length - offs[2]; t_row++) {
+            for (let t_col = offs[3]; t_col < arr.length - offs[1]; t_col++) {
+                if (arr[t_row][t_col] != 0 && (t_col + new_x < 0 || t_col + new_x > MATRIX_W - 1 || t_row + new_y > MATRIX_H - 1)) {
+                    console.log(`Out of bounds ${arr[t_row][t_col]} && ${t_col + new_x} || ${t_col + new_x} || ${t_row + new_y}`)
+                    return true
+                } else if (arr[t_row][t_col] != 0 && well.cells[t_row + new_y][t_col + new_x] == 1) {
+                    console.log("Cell collision")
+                    return true
+                }
+            }
+        }
+
+    return false
+    }
+
+
+    
+/*     private collisionForecast(new_x: number, new_y: number, new_rot: number): boolean {
+
+        let arr: number[][]
+        let offs: number[]
+
+        console.log("Checking collisions")
+
+        // If new_rot is different from the current rotation, we need to create
+        // a copy of the current piece matrix, rotate it and generate offsets array for it
+        // If rotation is not about to occur, we just take the current piece matrix and
+        // offsets
+        
+        if (new_rot != this.rot) {              
+            // if this is a forecast for rotation
             arr = this.getColorsArray()
             offs = this.getOffsets(new_rot)
             let cw = new_rot - this.rot == 1 ? true : false
@@ -199,21 +238,23 @@ class Tetrimino {
                     const right_wall_collision = t_col + new_x > MATRIX_W - 1
                     const floor_collision = t_row + new_y > MATRIX_H
                     const cell_collision = well.cells[t_row + new_y][t_col + new_x] == 1
-                    if (arr[t_row][t_col] != 0 && (left_wall_collision || right_wall_collision || floor_collision || cell_collision))  {
+                    if (arr[t_row][t_col] != 0 && (left_wall_collision || right_wall_collision || floor_collision || cell_collision)) {
                         console.log("Collision!!!")
                         console.log(`left = ${left_wall_collision} right = ${right_wall_collision} floor = ${floor_collision} cell = ${cell_collision}`)
                         return true
                     }
                 }
             }
-        } else { /* if this is a forecast for movement */
+        } else if (new_x != this.x) { 
+            // if this is a forecast for strafe movement
             arr = this.colors
             offs = this.offs
-            // Wall collision when moving
             if (new_x + offs[3] < 0 || new_x + arr.length - offs[1] > MATRIX_W) {
                 return true
             }
-            // Floor collision when moving 
+        } else { 
+            // if this is a forecast for drop movement
+            console.log(`this.pit = ${this.pit}`)
             if (this.pit == 0) {
                 return true
             }
@@ -222,6 +263,7 @@ class Tetrimino {
         // No collisions
         return false
     }
+ */
     
     strafe(x_inc: number) {
         const new_x = this.x + x_inc
@@ -276,11 +318,9 @@ class Tetrimino {
             this.respawnAt(this.x, this.y + this.pit, this.rot)
             lock()
         } else {
-            // console.log("Soft drop!!!!!")
             const new_y = this.y + 1
-            // const collision = (this.pit == 0)
             if (!this.collisionForecast(this.x, new_y, this.rot)) {
-                this.respawnAt(this.x, this.y + 1, this.rot)
+                this.respawnAt(this.x, new_y, this.rot)
             } else {
                 lock()
             }
@@ -418,7 +458,14 @@ function lock() {
 }
 
 function levelUp() {
+    level++
+    gravity = Math.pow(0.8 - ((level - 1) * 0.007), level - 1)
+    clearInterval(tickID)
+    tickID = setInterval(autoMove, 1000 * gravity)
+}
 
+function autoMove() {
+    t.drop(false)
 }
 
 // UTILITY FUNCTIONS --------------------------------------
@@ -514,24 +561,6 @@ const Y0 = 5
 
 // DATA ---------------------------------------------------
 
-/* const shapes: Image[] = [
-    assets.image`I`,
-    assets.image`J`,
-    assets.image`L`,
-    assets.image`O`,
-    assets.image`S`,
-    assets.image`T`,
-    assets.image`Z`,
-    assets.image`I0`,
-    assets.image`J0`,
-    assets.image`L0`,
-    assets.image`O0`,
-    assets.image`S0`,
-    assets.image`T0`,
-    assets.image`Z0`
-
-] */
-
 const shapes_pixel_data = [
     {
         img: assets.image`I`,
@@ -591,37 +620,6 @@ const wall_kick_data_I = [
     [[0, 0], [-2, 0], [1, 0], [-2, -1], [1, 2]]     // 7: 3 !cw
 ]
 
-
-/* 
-const offsets = [   // [shape: 0..6][rotation --> pop / unshift][direction: top, right, bottom, left]
-    [1, 0, 2, 0],
-    [0, 0, 1, 0],
-    [0, 0, 1, 0],
-    [0, 0, 0, 0],
-    [0, 0, 1, 0],
-    [0, 0, 1, 0],
-    [0, 0, 1, 0]
-]
- */
-/* 
-const heights = [
-    [2, 4, 3, 4],
-    [2, 3, 3, 3],
-    [2, 3, 3, 3],
-    [2, 2, 2, 2],
-    [2, 3, 3, 3],
-    [2, 3, 3, 3],
-    [2, 3, 3, 3]
-]
- */
-
-enum Rotation {
-    Z = 0,
-    R = 1,
-    T = 2,
-    L = 3
-}
-
 // UI -----------------------------------------------------
 
 let bg = image.create(160, 120)
@@ -660,14 +658,27 @@ let score: number = 0
 let gravity: number = 1
 let lines: number = 0
 let highscore: number = 0
+let paused = false
 
 let bag = new Bag()
 let well = new Well()
 let t = new Tetrimino(bag.deal())
 
+let tickID = setInterval(autoMove, 1000)
+
 updateStats()
 
 // CONTROLLER ---------------------------------------------
+
+controller.menu.onEvent(ControllerButtonEvent.Pressed, function () {
+    if (!paused) {
+        clearInterval(tickID)
+        paused = true
+    } else {
+        tickID = setInterval(autoMove, 1000 * gravity)
+        paused = false
+    }
+})
 
 controller.A.onEvent(ControllerButtonEvent.Pressed, function () {
     t.rotate(true)
