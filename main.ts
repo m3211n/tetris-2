@@ -208,63 +208,6 @@ class Tetrimino {
     return false
     }
 
-
-    
-/*     private collisionForecast(new_x: number, new_y: number, new_rot: number): boolean {
-
-        let arr: number[][]
-        let offs: number[]
-
-        console.log("Checking collisions")
-
-        // If new_rot is different from the current rotation, we need to create
-        // a copy of the current piece matrix, rotate it and generate offsets array for it
-        // If rotation is not about to occur, we just take the current piece matrix and
-        // offsets
-        
-        if (new_rot != this.rot) {              
-            // if this is a forecast for rotation
-            arr = this.getColorsArray()
-            offs = this.getOffsets(new_rot)
-            let cw = new_rot - this.rot == 1 ? true : false
-            rotateArray(arr, cw)
-
-            printPiece(arr)
-            printArray(offs)
-
-            for (let t_row = offs[0]; t_row < arr.length - offs[2]; t_row++) {
-                for (let t_col = offs[3]; t_col < arr.length - offs[1]; t_col++) {
-                    const left_wall_collision = t_col + new_x < 0
-                    const right_wall_collision = t_col + new_x > MATRIX_W - 1
-                    const floor_collision = t_row + new_y > MATRIX_H
-                    const cell_collision = well.cells[t_row + new_y][t_col + new_x] == 1
-                    if (arr[t_row][t_col] != 0 && (left_wall_collision || right_wall_collision || floor_collision || cell_collision)) {
-                        console.log("Collision!!!")
-                        console.log(`left = ${left_wall_collision} right = ${right_wall_collision} floor = ${floor_collision} cell = ${cell_collision}`)
-                        return true
-                    }
-                }
-            }
-        } else if (new_x != this.x) { 
-            // if this is a forecast for strafe movement
-            arr = this.colors
-            offs = this.offs
-            if (new_x + offs[3] < 0 || new_x + arr.length - offs[1] > MATRIX_W) {
-                return true
-            }
-        } else { 
-            // if this is a forecast for drop movement
-            console.log(`this.pit = ${this.pit}`)
-            if (this.pit == 0) {
-                return true
-            }
-        } 
-
-        // No collisions
-        return false
-    }
- */
-    
     strafe(x_inc: number) {
         const new_x = this.x + x_inc
         // const collision = (new_x + this.offs[3] < 0 || new_x + this.colors.length - this.offs[1] > MATRIX_W)
@@ -358,9 +301,6 @@ class Well {
     changeColor(x: number, y: number, c: number) {
         this.colors[y][x] = c
         this.cells[y][x] = 1
-        // console.log(`Writing to colors[${y}, ${x}] value ${c})`)
-        // console.log(`Writing to cells[${y}, ${x}] value ${1})`)
-
     }
 
     update() {
@@ -447,6 +387,7 @@ function lock() {
         }
     }
     if (t.y == 0) {
+        clearInterval(tickID)
         game.over(false)
     }
     well.checkRows()
