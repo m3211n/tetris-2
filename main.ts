@@ -101,32 +101,40 @@ class Tetrimino {
 
     private respawnAt(new_x: number, new_y: number, r: number) {
         // Respawns and updates the rotation of the existing piece at the new location
+        console.log("Respawn at 00001")
         this.x = new_x
         this.y = new_y
         this.rot = r
         // console.log(`This is shapeID ${this.shapeID} and rotation ${this.rotation}`)
+        console.log("Respawn at 00002")
         if (this.rot != 0) {
-            this.s.setImage(shapes_pixel_data[this.id].img.rotated(this.rot * 90))
+            console.log("Respawn at 00003")
+            let rotated: Image = shapes_pixel_data[this.id].img.rotated(this.rot * 90)
+            this.s.setImage(rotated)
         } else {
+            console.log("Respawn at 00004")
             this.s.setImage(shapes_pixel_data[this.id].img)
         }
+        console.log("Respawn at 00005")
         this.colors = this.getColorsArray()
         this.offs = this.getOffsets(this.rot)
         this.pit = this.sonar(well)
         let x = X0 + (this.x * C_SIZE + this.s.width / 2)
         let y = Y0 + (this.y * C_SIZE + this.s.height / 2)
         this.s.setPosition(x, y)
-
+        console.log("Respawn at 00006")
         if (this.rot != 0) {
             this.g_s.setImage(shapes_pixel_data[this.id].ghost_img.rotated(this.rot * 90))
+            console.log("Respawn at 00007")
         } else {
             this.g_s.setImage(shapes_pixel_data[this.id].ghost_img)
         }
+        console.log("Respawn at 00008")
         let g_x = X0 + (this.x * C_SIZE + this.g_s.width / 2)
         let g_y = Y0 + ((this.y + this.pit) * C_SIZE + this.g_s.height / 2)
         this.g_s.setPosition(g_x, g_y)
+        console.log("Respawn at 00009")
     }
-
     
     private sonar(well: Well): number { 
 
@@ -227,16 +235,14 @@ class Tetrimino {
                 next_rotation = 3
             }
         }
-
+        console.log("0000001")
         const rotation_index = this.rot * 2 + (cw ? 0 : 1)
         const wall_kick_tests = (this.id == 0 ? wall_kick_data_I[rotation_index] : wall_kick_data[rotation_index])
-
-        print2DArray(wall_kick_tests)
-
+        console.log("0000002")
         let canRotate = false
         let kick_x = 0
         let kick_y = 0
-
+        console.log("0000003")
         for (let test = 0; test < 5; test++) {
             if (!this.collisionForecast(this.x + wall_kick_tests[test][0], this.y - wall_kick_tests[test][1], next_rotation)) {
                 canRotate = true
@@ -245,9 +251,7 @@ class Tetrimino {
                 break
             }
         }
-
-        console.log(`Wall kick: x = ${kick_x} y = ${kick_y} canRotate = ${canRotate}`)
-
+        console.log("0000004")
         if (canRotate) {
             rotateArray(this.colors, cw)
             this.respawnAt(this.x + kick_x, this.y + kick_y, next_rotation)
@@ -460,21 +464,27 @@ function print2DArray(arr: number[][]) {
 }
 
 function rotateArray(arr: number[][], cw: boolean) {
+    console.log("Rotate array 00001")
     for (let i = 0; i < arr.length; i++) {
         for (let j = 0; j < i; j++) {
             [arr[i][j], arr[j][i]] = [arr[j][i], arr[i][j]];
         }
     }
+    console.log("Rotate array 00002")
     if (cw) {
+        console.log("Rotate array 00003")
         for (let i = 0; i < arr.length; i++) {
             arr[i].reverse();
         }
+        console.log("Rotate array 00004")
     } else {
+        console.log("Rotate array 00005")
         for (let i = 0; i < arr.length; i++) {
             for (let j = 0; j < arr.length / 2; j++) {
                 [arr[j][i], arr[arr.length - j - 1][i]] = [arr[arr.length - j - 1][i], arr[j][i]];
             }
         }
+        console.log("Rotate array 00006")
     }
 }
 

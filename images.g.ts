@@ -169,24 +169,6 @@ a a a a a a a a a a a a a a a
 . . . . . . . . . . . . . . . 
 . . . . . . . . . . . . . . . 
 `;
-            case "image13":
-            case "J0":return img`
-c c c c c . . . . . . . . . . 
-c . . . c . . . . . . . . . . 
-c . . . c . . . . . . . . . . 
-c . . . c . . . . . . . . . . 
-c . . . c . . . . . . . . . . 
-c . . . c c c c c c c c c c c 
-c . . . . . . . . . . . . . c 
-c . . . . . . . . . . . . . c 
-c . . . . . . . . . . . . . c 
-c c c c c c c c c c c c c c c 
-. . . . . . . . . . . . . . . 
-. . . . . . . . . . . . . . . 
-. . . . . . . . . . . . . . . 
-. . . . . . . . . . . . . . . 
-. . . . . . . . . . . . . . . 
-`;
             case "image14":
             case "L0":return img`
 . . . . . . . . . . c c c c c 
@@ -295,6 +277,24 @@ c c c c c c . . . c . . . . .
 . . . . . . . . . . . . . . . 
 . . . . . . . . . . . . . . . 
 `;
+            case "image13":
+            case "JG":return img`
+c c c c c . . . . . . . . . . 
+c . . . c . . . . . . . . . . 
+c . . . c . . . . . . . . . . 
+c . . . c . . . . . . . . . . 
+c . . . c . . . . . . . . . . 
+c . . . c c c c c c c c c c c 
+c . . . . . . . . . . . . . c 
+c . . . . . . . . . . . . . c 
+c . . . . . . . . . . . . . c 
+c c c c c c c c c c c c c c c 
+. . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . 
+. . . . . . . . . . . . . . . 
+`;
         }
         return null;
     })
@@ -312,12 +312,6 @@ c c c c c c . . . c . . . . .
         }
         return null;
     })
-
-}
-// Auto-generated code. Do not edit.
-
-// Auto-generated code. Do not edit.
-namespace myTiles {
 
 }
 // Auto-generated code. Do not edit.
