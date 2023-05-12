@@ -218,9 +218,9 @@ class Tetrimino {
 
     drop(hard: boolean) {
         if (hard) {
-            this.respawnAt(this.x, this.y + this.pit, this.rot)
             score += this.pit * 2
             updateStats()
+            this.respawnAt(this.x, this.y + this.pit, this.rot)
             lock()
         } else {
             const new_y = this.y + 1
@@ -420,7 +420,7 @@ function printPiece(piece: number[][]) {
     for (let i = 0; i < piece.length; i++) {
         for (let j = 0; j < piece[i].length; j++) {
             if (piece[i][j] != 0) {
-                s += "["+piece[i][j]+"]"
+                s += `[${piece[i][j]}]`
             } else {
                 s += "   "
             }
@@ -563,6 +563,9 @@ bg.fillRect(X0 - 3, Y0 - 3, 56, 116, 11)          // Matrix
 bg.fillRect(X0 - 1, Y0 - 1, 52, 112, 0)
 bg.fillRect(X0, Y0 + 10, 50, 1, 12)
 scene.setBackgroundImage(bg)
+
+let pause_img = sprites.create(assets.image`pause`)
+pause_img.z = 10
 
 // STATS --------------------------------------------------
 

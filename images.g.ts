@@ -295,6 +295,23 @@ c c c c c c c c c c . . . . .
 . . . . . . . . . . . . . . . 
 . . . . . . . . . . . . . . . 
 `;
+            case "image20":
+            case "pause":return img`
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+bfffffffffffffffffffffffffffffffffffffffffffffffb
+bf999999ffffff5555ffff77ffff77ffff2222ffaaaaaaafb
+bf999999ffffff5555ffff77ffff77ffff2222ffaaaaaaafb
+bf99ffff99ff55ffff55ff77ffff77ff22ffffffaaffffffb
+bf99ffff99ff55ffff55ff77ffff77ff22ffffffaaffffffb
+bf999999ffff55555555ff77ffff77ff222222ffaaaaafffb
+bf999999ffff55555555ff77ffff77ff222222ffaaaaafffb
+bf99ffffffff55ffff55ff77ffff77ffffff22ffaaffffffb
+bf99ffffffff55ffff55ff77ffff77ffffff22ffaaffffffb
+bf99ffffffff55ffff55ffff7777ffff2222ffffaaaaaaafb
+bf99ffffffff55ffff55ffff7777ffff2222ffffaaaaaaafb
+bfffffffffffffffffffffffffffffffffffffffffffffffb
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+`;
         }
         return null;
     })
