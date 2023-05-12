@@ -1,12 +1,38 @@
 class Bag {
     private preview: Sprite
+    private hold_preview: Sprite
     private contents: number[]
+    private _can_hold: boolean
+    private _hold_cell: number
 
+    set can_hold(value: boolean) {
+        this._can_hold = value
+    }
+
+    get can_hold() {
+        return this._can_hold
+    }
+
+    set hold_cell(value: number) {
+        this.hold_preview.image.fill(0)
+        this._can_hold = false
+        this._hold_cell = value
+        this.hold_preview.image.drawImage(shapes_pixel_data[this._hold_cell], 0, 0)
+    }
+
+    get hold_cell() {
+        console.log(`Dealing from hold id = ${this._hold_cell}`)
+        return this._hold_cell
+    }
+ 
     constructor() {
         this.contents = []
         this.fill()
-        this.preview = sprites.create(image.create(4 * C_SIZE, 15 * C_SIZE))
-        this.preview.setPosition(134, 73)
+        this.preview = sprites.create(image.create(4 * C_SIZE, 10 * C_SIZE))
+        this.hold_preview = sprites.create(image.create(4 * C_SIZE, 2 * C_SIZE))
+        this.preview.setPosition(134, 51)
+        this.hold_preview.setPosition(134, 103)
+        this._can_hold = true
     }
 
     private fill() {
@@ -34,7 +60,9 @@ class Bag {
         if (this.contents.length < NEXT_PIECES) {
             this.fill()
         }
+        console.log(`Hold id = ${this._hold_cell}`)
         this.updateQueue()
+        this._can_hold = true
         return next
     }
 }
@@ -53,6 +81,7 @@ class Tetrimino {
 
     constructor(id: number) {
         this.id = id
+        console.log(`Delt ID = ${this.id}`)
         this.s = sprites.create(image.create(0, 0))
         this.s.z = 2
         this.g_s = sprites.create(image.create(0, 0))
@@ -145,7 +174,7 @@ class Tetrimino {
         let arr: number[][]
         let offs: number[]
 
-        console.log("Checking collisions")
+        // console.log("Checking collisions")
 
         // If new_rot is different from the current rotation, we need to create
         // a copy of the current piece matrix, rotate it and generate offsets array for it
@@ -156,7 +185,7 @@ class Tetrimino {
             arr = getPieceColors(this.id, new_rot)
             offs = this.getOffsets(new_rot)
             let cw = new_rot - this.rot == 1 ? true : false
-            rotateArray(arr, cw)
+            // rotateArray(arr, cw)
         } else {
             arr = this.colors
             offs = this.offs
@@ -184,20 +213,12 @@ class Tetrimino {
         }
     }
 
-    rotate(cw: boolean) {
-        let next_rotation
-        if (cw) {
-            next_rotation = this.rot + 1
-            if (next_rotation > 3) {
-                next_rotation = 0
-            }
-        } else {
-            next_rotation = this.rot - 1
-            if (next_rotation < 0) {
-                next_rotation = 3
-            }
+    rotate() {
+        let next_rotation = this.rot - 1
+        if (next_rotation < 0) {
+            next_rotation = 3
         }
-        const rotation_index = this.rot * 2 + (cw ? 0 : 1)
+        const rotation_index = this.rot * 2 + 1
         const wall_kick_tests = (this.id == 0 ? wall_kick_data_I[rotation_index] : wall_kick_data[rotation_index])
         let canRotate = false
         let kick_x = 0
@@ -211,7 +232,7 @@ class Tetrimino {
             }
         }
         if (canRotate) {
-            rotateArray(this.colors, cw)
+            // rotateArray(this.colors, false)
             this.respawnAt(this.x + kick_x, this.y + kick_y, next_rotation)
         }
     }
@@ -339,6 +360,20 @@ class Well {
 
 // GAME FUNCTIONS -----------------------------------------
 
+function hold() {
+    if (bag.can_hold) {
+        let held_id = t.id
+        t.removeSprites()
+        if (bag.hold_cell !== undefined) {
+            t = new Tetrimino(bag.hold_cell)
+        } else {
+            t = new Tetrimino(bag.deal())
+        }
+        bag.hold_cell = held_id
+        bag.can_hold = false
+    }
+}
+
 function lock() {
     for (let row = t.offs[0]; row < t.colors.length - t.offs[2]; row++) {
         for (let col = t.offs[3]; col < t.colors.length - t.offs[1]; col++) {
@@ -465,25 +500,6 @@ function print2DArray(arr: number[][]) {
     console.log(s)
 }
 
-function rotateArray(arr: number[][], cw: boolean) {
-    for (let i = 0; i < arr.length; i++) {
-        for (let j = 0; j < i; j++) {
-            [arr[i][j], arr[j][i]] = [arr[j][i], arr[i][j]];
-        }
-    }
-    if (cw) {
-        for (let i = 0; i < arr.length; i++) {
-            arr[i].reverse();
-        }
-    } else {
-        for (let i = 0; i < arr.length; i++) {
-            for (let j = 0; j < arr.length / 2; j++) {
-                [arr[j][i], arr[arr.length - j - 1][i]] = [arr[arr.length - j - 1][i], arr[j][i]];
-            }
-        }
-    }
-}
-
 function updateStats() {
     sScore.setText(score.toString())
     sLevel.setText(level.toString())
@@ -566,6 +582,7 @@ scene.setBackgroundImage(bg)
 
 let pause_img = sprites.create(assets.image`pause`)
 pause_img.z = 10
+pause_img.setPosition(80, -60)
 
 // STATS --------------------------------------------------
 
@@ -574,12 +591,14 @@ let sLevelTitle = sprites.create(assets.image`txt_level`)
 let sLinesTitle = sprites.create(assets.image`txt_lines`)
 let sHighscoreTitle = sprites.create(assets.image`txt_hiscore`)
 let sNextTitle = sprites.create(assets.image`txt_next`)
+let sHoldTitle = sprites.create(assets.image`txt_hold`)
 
 sScoreTitle.setPosition(18, 18)
 sLevelTitle.setPosition(18, 43)
 sLinesTitle.setPosition(18, 68)
 sHighscoreTitle.setPosition(23, 93)
 sNextTitle.setPosition(134, 18)
+sHoldTitle.setPosition(134, 93)
 
 let sScore = textsprite.create("0", 0, 11)
 sScore.setMaxFontHeight(5)
@@ -613,18 +632,20 @@ controller.menu.onEvent(ControllerButtonEvent.Pressed, function () {
     if (!paused) {
         clearInterval(tickID)
         paused = true
+        pause_img.setPosition(80, 60)
     } else {
         tickID = setInterval(autoMove, 1000 * gravity)
         paused = false
+        pause_img.setPosition(80, -60)
     }
 })
 
 controller.A.onEvent(ControllerButtonEvent.Pressed, function () {
-    t.rotate(true)
+    t.rotate()
 })
 
 controller.B.onEvent(ControllerButtonEvent.Pressed, function () {
-    t.rotate(false)
+    hold()
 })
 
 controller.down.onEvent(ControllerButtonEvent.Repeated, function () {

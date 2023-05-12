@@ -297,20 +297,32 @@ c c c c c c c c c c . . . . .
 `;
             case "image20":
             case "pause":return img`
-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
-bfffffffffffffffffffffffffffffffffffffffffffffffb
-bf999999ffffff5555ffff77ffff77ffff2222ffaaaaaaafb
-bf999999ffffff5555ffff77ffff77ffff2222ffaaaaaaafb
-bf99ffff99ff55ffff55ff77ffff77ff22ffffffaaffffffb
-bf99ffff99ff55ffff55ff77ffff77ff22ffffffaaffffffb
-bf999999ffff55555555ff77ffff77ff222222ffaaaaafffb
-bf999999ffff55555555ff77ffff77ff222222ffaaaaafffb
-bf99ffffffff55ffff55ff77ffff77ffffff22ffaaffffffb
-bf99ffffffff55ffff55ff77ffff77ffffff22ffaaffffffb
-bf99ffffffff55ffff55ffff7777ffff2222ffffaaaaaaafb
-bf99ffffffff55ffff55ffff7777ffff2222ffffaaaaaaafb
-bfffffffffffffffffffffffffffffffffffffffffffffffb
-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+bffffffffffffffffffffffffffffffffffffffffffffffffffffffffffb
+bffffffffffffffffffffffffffffffffffffffffffffffffffffffffffb
+bffffffffffffffffffffffffffffffffffffffffffffffffffffffffffb
+bfffff999999ffffff5555ffff77ffff77ffff222222ffaaaaaaaafffffb
+bfffff999999ffffff5555ffff77ffff77ffff222222ffaaaaaaaafffffb
+bfffff99ffff99ff55ffff55ff77ffff77ff22ffffffffaafffffffffffb
+bfffff99ffff99ff55ffff55ff77ffff77ff22ffffffffaafffffffffffb
+bfffff999999ffff55555555ff77ffff77ffff2222ffffaaaaaafffffffb
+bfffff999999ffff55555555ff77ffff77ffff2222ffffaaaaaafffffffb
+bfffff99ffffffff55ffff55ff77ffff77ffffffff22ffaafffffffffffb
+bfffff99ffffffff55ffff55ff77ffff77ffffffff22ffaafffffffffffb
+bfffff99ffffffff55ffff55ffff7777ffff222222ffffaaaaaaaafffffb
+bfffff99ffffffff55ffff55ffff7777ffff222222ffffaaaaaaaafffffb
+bffffffffffffffffffffffffffffffffffffffffffffffffffffffffffb
+bffffffffffffffffffffffffffffffffffffffffffffffffffffffffffb
+bffffffffffffffffffffffffffffffffffffffffffffffffffffffffffb
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+`;
+            case "image21":
+            case "txt_hold":return img`
+1 . . . 1 . 1 1 1 1 . 1 . . . . 1 1 1 1 . 
+1 . . . 1 . 1 . . 1 . 1 . . . . . 1 . . 1 
+1 1 1 1 1 . 1 . . 1 . 1 . . . . . 1 . . 1 
+1 . . . 1 . 1 . . 1 . 1 . . . . . 1 . . 1 
+1 . . . 1 . 1 1 1 1 . 1 1 1 1 . 1 1 1 1 . 
 `;
         }
         return null;
