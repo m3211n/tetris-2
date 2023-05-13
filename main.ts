@@ -184,8 +184,6 @@ class Tetrimino {
         if (new_rot != this.rot) { /* if this is a forecast for rotation */
             arr = getPieceColors(this.id, new_rot)
             offs = this.getOffsets(new_rot)
-            let cw = new_rot - this.rot == 1 ? true : false
-            // rotateArray(arr, cw)
         } else {
             arr = this.colors
             offs = this.offs
@@ -214,26 +212,21 @@ class Tetrimino {
     }
 
     rotate() {
-        let next_rotation = this.rot - 1
+        let next_rotation = this.rot - 1 // in this game we only rotate CCW
         if (next_rotation < 0) {
             next_rotation = 3
         }
         const rotation_index = this.rot * 2 + 1
         const wall_kick_tests = (this.id == 0 ? wall_kick_data_I[rotation_index] : wall_kick_data[rotation_index])
-        let canRotate = false
         let kick_x = 0
         let kick_y = 0
         for (let test = 0; test < 5; test++) {
             if (!this.collisionForecast(this.x + wall_kick_tests[test][0], this.y - wall_kick_tests[test][1], next_rotation)) {
-                canRotate = true
                 kick_x = wall_kick_tests[test][0]
                 kick_y = -wall_kick_tests[test][1]
+                this.respawnAt(this.x + kick_x, this.y + kick_y, next_rotation)
                 break
             }
-        }
-        if (canRotate) {
-            // rotateArray(this.colors, false)
-            this.respawnAt(this.x + kick_x, this.y + kick_y, next_rotation)
         }
     }
 
@@ -338,14 +331,6 @@ class Well {
             }
             updateStats()
         }
-    }
-
-    cell_row(i: number): number[] {
-        let result = []
-        for (let j = 0; j < MATRIX_W; j++) {
-            result.push(this.cells[i][j])
-        }
-        return result
     }
 
     cell_col(j: number): number[] {
