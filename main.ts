@@ -24,6 +24,19 @@ class Bag {
         console.log(`Dealing from hold id = ${this._hold_cell}`)
         return this._hold_cell
     }
+    get next() {
+        let next = this.contents.shift()
+        if (this.contents.length < NEXT_PIECES) {
+            this.fill()
+        }
+        console.log(`Hold id = ${this._hold_cell}`)
+        this.preview.image.fill(0)
+        for (let i = 0; i < 3; i++) {
+            this.preview.image.drawImage(shapes_pixel_data[this.contents[i]], 0, i * 20)
+        }
+        this._can_hold = true
+        return next  
+    }
  
     constructor() {
         this.contents = []
@@ -46,24 +59,6 @@ class Bag {
                 full = true
             }
         }
-    }
-
-    private updateQueue() {
-        this.preview.image.fill(0)
-        for (let i = 0; i < 3; i++) {
-            this.preview.image.drawImage(shapes_pixel_data[this.contents[i]], 0, i * 20)
-        }
-    }
-
-    deal(): number {
-        let next = this.contents.shift()
-        if (this.contents.length < NEXT_PIECES) {
-            this.fill()
-        }
-        console.log(`Hold id = ${this._hold_cell}`)
-        this.updateQueue()
-        this._can_hold = true
-        return next
     }
 }
 
@@ -216,8 +211,7 @@ class Tetrimino {
         if (next_rotation < 0) {
             next_rotation = 3
         }
-        const rotation_index = this.rot * 2 + 1
-        const wall_kick_tests = (this.id == 0 ? wall_kick_data_I[rotation_index] : wall_kick_data[rotation_index])
+        const wall_kick_tests = (this.id == 0 ? wall_kick_data_I[this.rot * 2 + 1] : wall_kick_data[this.rot * 2 + 1])
         let kick_x = 0
         let kick_y = 0
         for (let test = 0; test < 5; test++) {
@@ -279,18 +273,6 @@ class Well {
         this.cells[y][x] = 1
     }
 
-    update() {
-        this.s.image.fill(0)
-        for (let row = 0; row < MATRIX_H; row++) {
-            for (let col = 0; col < MATRIX_W; col++) {
-                if (this.colors[row][col] != 0) {
-                    // console.log("Painting rect at [" + row + ", " + col + "] with color " + this.colors[row][col])
-                    this.s.image.fillRect(col * C_SIZE, row * C_SIZE, C_SIZE, C_SIZE, this.colors[row][col])
-                }
-            }
-        }
-    }
-
     checkRows() {
         let lc = 0
         for (let row = 2; row < MATRIX_H; row++) {
@@ -309,7 +291,15 @@ class Well {
                 this.colors.unshift(empty_colors)
             }
         }
-        this.update()
+        this.s.image.fill(0)
+        for (let row = 0; row < MATRIX_H; row++) {
+            for (let col = 0; col < MATRIX_W; col++) {
+                if (this.colors[row][col] != 0) {
+                    // console.log("Painting rect at [" + row + ", " + col + "] with color " + this.colors[row][col])
+                    this.s.image.fillRect(col * C_SIZE, row * C_SIZE, C_SIZE, C_SIZE, this.colors[row][col])
+                }
+            }
+        }
         if (lc != 0) {
             switch (lc) {
                 case 1:
@@ -327,7 +317,8 @@ class Well {
 
             // UPDATE LEVEL
             if (lines >= 10 * level) {
-                levelUp()
+                level++
+                gravity = Math.pow(0.8 - ((level - 1) * 0.007), level - 1)
             }
             updateStats()
         }
@@ -352,7 +343,7 @@ function hold() {
         if (bag.hold_cell !== undefined) {
             t = new Tetrimino(bag.hold_cell)
         } else {
-            t = new Tetrimino(bag.deal())
+            t = new Tetrimino(bag.next)
         }
         bag.hold_cell = held_id
         bag.can_hold = false
@@ -369,26 +360,12 @@ function lock() {
         }
     }
     if (t.y == 0) {
-        clearInterval(tickID)
+        // clearInterval(tickID)
         game.over(false)
     }
     well.checkRows()
     t.removeSprites()
-    t = new Tetrimino(bag.deal())
-
-    // print_piece()
-    // print_well()
-}
-
-function levelUp() {
-    level++
-    gravity = Math.pow(0.8 - ((level - 1) * 0.007), level - 1)
-    clearInterval(tickID)
-    tickID = setInterval(autoMove, 1000 * gravity)
-}
-
-function autoMove() {
-    t.drop(false)
+    t = new Tetrimino(bag.next)
 }
 
 // UTILITY FUNCTIONS --------------------------------------
@@ -602,28 +579,25 @@ let gravity: number = 1
 let lines: number = 0
 let highscore: number = 0
 let paused = false
+let frame: number = 0
 
 let bag = new Bag()
 let well = new Well()
-let t = new Tetrimino(bag.deal())
+let t = new Tetrimino(bag.next)
 
-let tickID = setInterval(autoMove, 1000)
+game.onUpdate(function () {
+    const tick = gravity * 60
+    frame++
+    if (frame == tick) {
+        t.drop(false)
+        frame = 0
+    }
+
+})
 
 updateStats()
 
 // CONTROLLER ---------------------------------------------
-
-controller.menu.onEvent(ControllerButtonEvent.Pressed, function () {
-    if (!paused) {
-        clearInterval(tickID)
-        paused = true
-        pause_img.setPosition(80, 60)
-    } else {
-        tickID = setInterval(autoMove, 1000 * gravity)
-        paused = false
-        pause_img.setPosition(80, -60)
-    }
-})
 
 controller.A.onEvent(ControllerButtonEvent.Pressed, function () {
     t.rotate()
