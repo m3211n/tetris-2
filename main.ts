@@ -589,7 +589,7 @@ let t = new Tetrimino(bag.next)
 game.onUpdate(function () {
     const tick = gravity * 60
     frame++
-    if (frame == tick) {
+    if (frame > tick) {
         t.drop(false)
         frame = 0
     }
