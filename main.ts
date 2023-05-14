@@ -21,7 +21,7 @@ class Bag {
     }
 
     get hold_cell() {
-        console.log(`Dealing from hold id = ${this._hold_cell}`)
+        // console.log(`Dealing from hold id = ${this._hold_cell}`)
         return this._hold_cell
     }
     get next() {
@@ -29,10 +29,10 @@ class Bag {
         if (this.contents.length < NEXT_PIECES) {
             this.fill()
         }
-        console.log(`Hold id = ${this._hold_cell}`)
+        // console.log(`Hold id = ${this._hold_cell}`)
         this.preview.image.fill(0)
         for (let i = 0; i < 3; i++) {
-            this.preview.image.drawImage(shapes_pixel_data[this.contents[i]], 0, i * 20)
+            this.preview.image.drawImage(shapes_pixel_data[this.contents[i]], 0, i * 20 + 5)
         }
         this._can_hold = true
         return next  
@@ -404,6 +404,8 @@ function getPieceImage(colors: number[][]): [Image, Image] {
         for (let x = 0; x < colors.length; x++) {
             if (colors[y][x] != 0) {
                 img.fillRect(x * C_SIZE, y * C_SIZE, C_SIZE, C_SIZE, colors[y][x])
+                img.fillRect(x * C_SIZE + 1, y * C_SIZE + 1, C_SIZE - 2, C_SIZE - 2, 0)
+                img.fillRect(x * C_SIZE + 2, y * C_SIZE + 2, C_SIZE - 4, C_SIZE - 4, colors[y][x])
                 ghost_img.fillRect(x * C_SIZE, y * C_SIZE, C_SIZE, C_SIZE, 12)
                 ghost_img.fillRect(x * C_SIZE + 1, y * C_SIZE + 1, C_SIZE - 2, C_SIZE - 2, 0)
             }
@@ -475,12 +477,12 @@ function updateStats() {
 
 // SETTINGS -----------------------------------------------
 
-const C_SIZE = 5
+const C_SIZE = 6
 const NEXT_PIECES = 3
-const MATRIX_H = 22
+const MATRIX_H = 20
 const MATRIX_W = 10
-const X0 = 55
-const Y0 = 5
+const X0 = 50
+const Y0 = 0
 
 // DATA ---------------------------------------------------
 
@@ -537,9 +539,8 @@ const wall_kick_data_I = [
 // UI -----------------------------------------------------
 
 let bg = image.create(160, 120)
-bg.fillRect(X0 - 3, Y0 - 3, 56, 116, 11)          // Matrix
-bg.fillRect(X0 - 1, Y0 - 1, 52, 112, 0)
-bg.fillRect(X0, Y0 + 10, 50, 1, 12)
+bg.fillRect(X0-4, Y0, 68, 120, 12)          // Matrix
+bg.fillRect(X0-1, Y0, 62, 120, 0)          // Matrix
 scene.setBackgroundImage(bg)
 
 let pause_img = sprites.create(assets.image`pause`)
