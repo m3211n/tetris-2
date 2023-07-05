@@ -4,22 +4,18 @@ class Bag {
     private contents: number[]
     private _can_hold: boolean
     private _hold_cell: number
-
     set can_hold(value: boolean) {
         this._can_hold = value
     }
-
     get can_hold() {
         return this._can_hold
     }
-
     set hold_cell(value: number) {
         this.hold_preview.image.fill(0)
         this._can_hold = false
         this._hold_cell = value
         this.hold_preview.image.drawImage(shapes_pixel_data[this._hold_cell], 0, 0)
     }
-
     get hold_cell() {
         // console.log(`Dealing from hold id = ${this._hold_cell}`)
         return this._hold_cell
@@ -37,7 +33,6 @@ class Bag {
         this._can_hold = true
         return next  
     }
- 
     constructor() {
         this.contents = []
         this.fill()
@@ -47,7 +42,6 @@ class Bag {
         this.hold_preview.setPosition(134, 103)
         this._can_hold = true
     }
-
     private fill() {
         let full = false
         while (!full) {
@@ -71,9 +65,7 @@ class Tetrimino {
     y: number
     s: Sprite
     pit: number
-
     private g_s: Sprite
-
     constructor(id: number) {
         this.id = id
         console.log(`Delt ID = ${this.id}`)
@@ -83,7 +75,6 @@ class Tetrimino {
         this.g_s.z = 1
         this.respawnAt((this.id == 3 ? 4 : 3), 0, 0)
     }
-
     private getOffsets(r?: number): number[] {
         let result = []
         if (this.id == 0) {
@@ -100,7 +91,6 @@ class Tetrimino {
         }
         return result
     }
-
     private respawnAt(new_x: number, new_y: number, r: number) {
         // Respawns and updates the rotation of the existing piece at the new location
         this.x = new_x
@@ -121,14 +111,11 @@ class Tetrimino {
         let g_y = Y0 + ((this.y + this.pit) * C_SIZE + this.g_s.height / 2)
         this.g_s.setPosition(g_x, g_y)
     }
-    
     private sonar(well: Well): number { 
-
         /* 
         returns max possible drop depth (pitfall) the current piece
         considering the holes in the bottom of the piece
         */
-
         const piece_btm = this.y + this.colors.length - this.offs[2]
         let pitfall = MATRIX_H - piece_btm
         // console.log(`----- >> Starting with pitfall = ${pitfall} piece_bottom = ${piece_bottom}`)
@@ -163,19 +150,14 @@ class Tetrimino {
         // console.log(`<< Piece pitfall = ${pitfall}`)
         return pitfall
     }
-
     private collisionForecast(new_x: number, new_y: number, new_rot: number): boolean {
-
         let arr: number[][]
         let offs: number[]
-
         // console.log("Checking collisions")
-
-        // If new_rot is different from the current rotation, we need to create
-        // a copy of the current piece matrix, rotate it and generate offsets array for it
-        // If rotation is not about to occur, we just take the current piece matrix and
-        // offsets
-        
+        /* If new_rot is different from the current rotation, we need to create
+        a copy of the current piece matrix, rotate it and generate offsets array for it
+        If rotation is not about to occur, we just take the current piece matrix and
+        offsets */
         if (new_rot != this.rot) { /* if this is a forecast for rotation */
             arr = getPieceColors(this.id, new_rot)
             offs = this.getOffsets(new_rot)
@@ -194,10 +176,8 @@ class Tetrimino {
                 }
             }
         }
-
-    return false
+        return false
     }
-
     strafe(x_inc: number) {
         const new_x = this.x + x_inc
         // const collision = (new_x + this.offs[3] < 0 || new_x + this.colors.length - this.offs[1] > MATRIX_W)
@@ -205,7 +185,6 @@ class Tetrimino {
             this.respawnAt(new_x, this.y, this.rot)
         }
     }
-
     rotate() {
         let next_rotation = this.rot - 1 // in this game we only rotate CCW
         if (next_rotation < 0) {
@@ -223,7 +202,6 @@ class Tetrimino {
             }
         }
     }
-
     drop(hard: boolean) {
         if (hard) {
             score += this.pit * 2
@@ -239,18 +217,15 @@ class Tetrimino {
             }
         }
     }
-
     removeSprites() {
         this.s.destroy()
         this.g_s.destroy()
     }
 }
-
 class Well {
     private s: Sprite
     colors: number[][]
     cells: number[][]
-
     constructor() {
         this.colors = []
         this.cells = []
@@ -267,12 +242,10 @@ class Well {
         this.s.setPosition(X0 + MATRIX_W * C_SIZE / 2, Y0 + MATRIX_H * C_SIZE / 2)
         this.s.z = 0
     }
-
     changeColor(x: number, y: number, c: number) {
         this.colors[y][x] = c
         this.cells[y][x] = 1
     }
-
     checkRows() {
         let lc = 0
         for (let row = 2; row < MATRIX_H; row++) {
@@ -314,7 +287,6 @@ class Well {
                 case 4:
                     score += (800 * level)
             }
-
             // UPDATE LEVEL
             if (lines >= 10 * level) {
                 level++
@@ -323,7 +295,6 @@ class Well {
             updateStats()
         }
     }
-
     cell_col(j: number): number[] {
         let result = []
         for (let i = 0; i < MATRIX_H; i++) {
@@ -331,7 +302,6 @@ class Well {
         }
         return result
     }
-
 }
 
 // GAME FUNCTIONS -----------------------------------------
@@ -349,7 +319,6 @@ function hold() {
         bag.can_hold = false
     }
 }
-
 function lock() {
     for (let row = t.offs[0]; row < t.colors.length - t.offs[2]; row++) {
         for (let col = t.offs[3]; col < t.colors.length - t.offs[1]; col++) {
@@ -396,7 +365,6 @@ function getPieceColors(id: number, rot: number): number[][] {
     }
     return matrix 
 }
-
 function getPieceImage(colors: number[][]): [Image, Image] {
     let img = image.create(colors.length * C_SIZE, colors.length * C_SIZE)
     let ghost_img = image.create(colors.length * C_SIZE, colors.length * C_SIZE)
@@ -413,7 +381,6 @@ function getPieceImage(colors: number[][]): [Image, Image] {
     }
     return [img, ghost_img]
 }
-
 function printPiece(piece: number[][]) {
     let s = "------------\r\n"
     for (let i = 0; i < piece.length; i++) {
@@ -428,7 +395,6 @@ function printPiece(piece: number[][]) {
     }
     console.log(s)
 }
-
 function printWell() {
     let s = "------------------------------"
     for (let i = 0; i < MATRIX_H; i++) {
@@ -443,7 +409,6 @@ function printWell() {
     }
     console.log(s)
 }
-
 function printArray(arr: number[]) {
     let s = "[ "
     for (let elem of arr) {
@@ -452,7 +417,6 @@ function printArray(arr: number[]) {
     s += "]"
     console.log(s)
 }
-
 function print2DArray(arr: number[][]) {
     let s = ""
     for (let row of arr) {
@@ -463,7 +427,6 @@ function print2DArray(arr: number[][]) {
     }
     console.log(s)
 }
-
 function updateStats() {
     sScore.setText(score.toString())
     sLevel.setText(level.toString())
@@ -487,7 +450,6 @@ const Y0 = 0
 // DATA ---------------------------------------------------
 
 const tetris_colors = [9, 8, 4, 5, 7, 10, 2]
-
 const shapes_pixel_data = [
     assets.image`I`,
     assets.image`J`,
@@ -497,7 +459,6 @@ const shapes_pixel_data = [
     assets.image`T`,
     assets.image`Z`
 ]
-
 const shapes = [
     [[4, 5, 6, 7], [2, 6, 10, 14], [8, 9, 10, 11], [1, 5, 9, 13]],
     [[0, 3, 4, 5], [1, 2, 4, 7], [3, 4, 5, 8], [1, 4, 6, 7]],
@@ -507,7 +468,6 @@ const shapes = [
     [[1, 3, 4, 5], [1, 4, 5 ,7], [3, 4, 5, 7], [1, 3, 4, 7]],
     [[0, 1, 4, 5], [2, 4, 5, 7], [3, 4, 7 ,8], [1, 3 ,4 ,6]]
 ]
-
 const wall_kick_data = [
     [[0, 0], [-1, 0], [-1, 1], [0, -2], [-1, -2]],  // 0: 0 cw
     [[0, 0], [1, 0], [1, 1], [0, -2], [1, -2]],     // 1: 0 !cw
@@ -521,7 +481,6 @@ const wall_kick_data = [
     [[0, 0], [-1, 0], [-1, -1], [0, 2], [-1, 2]],   // 6: 3 cw
     [[0, 0], [-1, 0], [-1, -1], [0, 2], [-1, 2]]    // 7: 3 !cw
 ]
-
 const wall_kick_data_I = [
     [[0, 0], [-2, 0], [1, 0], [-2, -1], [1, 2]],    // 0: 0 cw
     [[0, 0], [-1, 0], [+2, 0], [-1, 2], [2, -1]],   // 1: 0 !cw
@@ -542,7 +501,6 @@ let bg = image.create(160, 120)
 bg.fillRect(X0-4, Y0, 68, 120, 12)          // Matrix
 bg.fillRect(X0-1, Y0, 62, 120, 0)          // Matrix
 scene.setBackgroundImage(bg)
-
 let pause_img = sprites.create(assets.image`pause`)
 pause_img.z = 10
 pause_img.setPosition(80, -60)
@@ -555,14 +513,12 @@ let sLinesTitle = sprites.create(assets.image`txt_lines`)
 let sHighscoreTitle = sprites.create(assets.image`txt_hiscore`)
 let sNextTitle = sprites.create(assets.image`txt_next`)
 let sHoldTitle = sprites.create(assets.image`txt_hold`)
-
 sScoreTitle.setPosition(18, 18)
 sLevelTitle.setPosition(18, 43)
 sLinesTitle.setPosition(18, 68)
 sHighscoreTitle.setPosition(23, 93)
 sNextTitle.setPosition(134, 18)
 sHoldTitle.setPosition(134, 93)
-
 let sScore = textsprite.create("0", 0, 11)
 sScore.setMaxFontHeight(5)
 let sLevel = textsprite.create("0", 0, 11)
@@ -581,11 +537,9 @@ let lines: number = 0
 let highscore: number = 0
 let paused = false
 let frame: number = 0
-
 let bag = new Bag()
 let well = new Well()
 let t = new Tetrimino(bag.next)
-
 game.onUpdate(function () {
     const tick = gravity * 60
     frame++
@@ -593,9 +547,7 @@ game.onUpdate(function () {
         t.drop(false)
         frame = 0
     }
-
 })
-
 updateStats()
 
 // CONTROLLER ---------------------------------------------
@@ -603,35 +555,27 @@ updateStats()
 controller.A.onEvent(ControllerButtonEvent.Pressed, function () {
     t.rotate()
 })
-
 controller.B.onEvent(ControllerButtonEvent.Pressed, function () {
     hold()
 })
-
 controller.down.onEvent(ControllerButtonEvent.Repeated, function () {
     t.drop(false)
 })
-
 controller.left.onEvent(ControllerButtonEvent.Repeated, function () {
     t.strafe(-1)
 })
-
 controller.right.onEvent(ControllerButtonEvent.Repeated, function () {
     t.strafe(1)
 })
-
 controller.down.onEvent(ControllerButtonEvent.Pressed, function () {
     t.drop(false)
 })
-
 controller.left.onEvent(ControllerButtonEvent.Pressed, function () {
     t.strafe(-1)
 })
-
 controller.right.onEvent(ControllerButtonEvent.Pressed, function () {
     t.strafe(1)
 })
-
 controller.up.onEvent(ControllerButtonEvent.Pressed, function () {
     t.drop(true)
 })
