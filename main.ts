@@ -1,23 +1,47 @@
-interface Tdata {
-    colors: number[][];
-    offsets: number[];
-    spawnX: number;
-    img: Image;
-    ghost_img: Image;
-}
-
 class Bag {
     private preview: Sprite
+    private hold_preview: Sprite
     private contents: number[]
-
+    private _can_hold: boolean
+    private _hold_cell: number
+    set can_hold(value: boolean) {
+        this._can_hold = value
+    }
+    get can_hold() {
+        return this._can_hold
+    }
+    set hold_cell(value: number) {
+        this.hold_preview.image.fill(0)
+        this._can_hold = false
+        this._hold_cell = value
+        this.hold_preview.image.drawImage(shapes_pixel_data[this._hold_cell], 0, 0)
+    }
+    get hold_cell() {
+        // console.log(`Dealing from hold id = ${this._hold_cell}`)
+        return this._hold_cell
+    }
+    get next() {
+        let next = this.contents.shift()
+        if (this.contents.length < NEXT_PIECES) {
+            this.fill()
+        }
+        // console.log(`Hold id = ${this._hold_cell}`)
+        this.preview.image.fill(0)
+        for (let i = 0; i < 3; i++) {
+            this.preview.image.drawImage(shapes_pixel_data[this.contents[i]], 0, i * 20 + 5)
+        }
+        this._can_hold = true
+        return next  
+    }
     constructor() {
-        let full = false
         this.contents = []
         this.fill()
-        this.preview = sprites.create(image.create(4 * CELL_SIZE, 15 * CELL_SIZE))
-        this.preview.setPosition(134, 73)
+        this.preview = sprites.create(image.create(4 * C_SIZE, 10 * C_SIZE))
+        this.hold_preview = sprites.create(image.create(4 * C_SIZE, 2 * C_SIZE))
+        this.preview.setPosition(134, 51)
+        this.hold_preview.setPosition(134, 103)
+        this._can_hold = true
     }
-
     private fill() {
         let full = false
         while (!full) {
@@ -30,311 +54,379 @@ class Bag {
             }
         }
     }
-
-    private updateQueue() {
-        this.preview.image.fill(0)
-        for (let i = 0; i < 3; i++) {
-            this.preview.image.drawImage(shapes_data[this.contents[i]].img, 0, i * 20 + 5)
-        }
-    }
-
-    deal(): number {
-        let next = this.contents.shift()
-        if (this.contents.length < NEXT_PIECES) {
-            this.fill()
-        }
-        this.updateQueue()
-        return next
-    }
 }
 
 class Tetrimino {
-    tdata: Tdata
-    shapeID: number
-    rotation: number
-    piece: Sprite
+    id: number
+    colors: number[][]
+    offs: number[]
+    rot: number
     x: number
     y: number
-    pitfall: number
-
-    constructor() {
-        this.spawn()
+    s: Sprite
+    pit: number
+    private g_s: Sprite
+    constructor(id: number) {
+        this.id = id
+        console.log(`Delt ID = ${this.id}`)
+        this.s = sprites.create(image.create(0, 0))
+        this.s.z = 2
+        this.g_s = sprites.create(image.create(0, 0))
+        this.g_s.z = 1
+        this.respawnAt((this.id == 3 ? 4 : 3), 0, 0)
     }
-
-    private ghost_piece: Sprite
-
-    private print_well(well: Well) {
-        for (let i = 0; i < MATRIX_HEIGHT; i++) {
-            let s = " | "
-            for (let j = 0; j < MATRIX_WIDTH; j++) {
-                if (well.colors[i][j] == undefined) {
-                    s += " | "
-                } else {
-                    s += well.colors[i][j] + " | "
-                }
-            }
-            console.log(s)
+    private getOffsets(r?: number): number[] {
+        let result = []
+        if (this.id == 0) {
+            result = [1, 0, 2, 0]
+        } else if (this.id == 3) {
+            result = [0, 0, 0, 0]
+        } else {
+            result = [0, 0, 1, 0]
         }
-    }
-
-    private print_piece(piece?: number[][]) {
-        if (!piece) {
-            piece = this.tdata.colors
-        }
-        console.log("--------")
-        for (let i = 0; i < piece.length; i++) {
-            let s = ""
-            for (let j = 0; j < piece[i].length; j++) {
-                if (piece[i][j] != 0) {
-                    s += "[_]"
-                } else {
-                    s += "   "
-                }
-            }
-            console.log(s)
-        }
-    }
-
-/*     private getColorsArray(): number[][] {
-        let result: number[][] = []
-        let img = this.piece.image
-        let s = img.width / CELL_SIZE
-        for (let y = 0; y < s; y++) {
-            result.push([])
-            for (let x = 0; x < s; x++) {
-                let color = img.getPixel(x * CELL_SIZE, y * CELL_SIZE)
-                result[y].push(color)
+        if (r) {
+            for (let index = 0; index < r; index++) {
+                result.unshift(result.pop())
             }
         }
         return result
-
     }
- */
-    spawn() {
-        // Сreates new piece at the start of the game / after locking
-        this.shapeID = bag.deal()
-        this.tdata = shapes_data[this.shapeID]
-        if (this.piece && this.ghost_piece) {
-            this.piece.destroy()
-            this.ghost_piece.destroy()
-        }
-        this.piece = sprites.create(image.create(0, 0))
-        this.piece.z = 2
-        this.ghost_piece = sprites.create(image.create(0, 0))
-        this.ghost_piece.z = 1
-        this.respawnAt(this.tdata.spawnX, 0, Rotation.Z)
-    }
-
-    respawnAt(new_x: number, new_y: number, r: number) {
+    private respawnAt(new_x: number, new_y: number, r: number) {
         // Respawns and updates the rotation of the existing piece at the new location
-        console.log(`This is shapeID ${this.shapeID} and rotation ${this.rotation}`)
         this.x = new_x
         this.y = new_y
-        this.rotation = r
-        let img = this.tdata.img
-        if (this.rotation != 0) {
-            img = img.rotated(this.rotation * 90)
+        if (r != this.rot) {
+            this.rot = r
+            this.colors = getPieceColors(this.id, this.rot)
+            let imgs: Image[] = getPieceImage(this.colors)
+            this.s.setImage(imgs[0])
+            this.g_s.setImage(imgs[1])
+            this.offs = this.getOffsets(this.rot)
         }
-        this.piece.setImage(img)
-        this.pitfall = this.sonar(well)
-        let x = X0 + (this.x * CELL_SIZE + this.piece.width / 2)
-        let y = Y0 + (this.y * CELL_SIZE + this.piece.height / 2)
-        this.piece.setPosition(x, y)
-        // this.print_piece()
-        this.spawn_ghost()
+        this.pit = this.sonar(well)
+        let x = X0 + (this.x * C_SIZE + this.s.width / 2)
+        let y = Y0 + (this.y * C_SIZE + this.s.height / 2)
+        this.s.setPosition(x, y)
+        let g_x = X0 + (this.x * C_SIZE + this.g_s.width / 2)
+        let g_y = Y0 + ((this.y + this.pit) * C_SIZE + this.g_s.height / 2)
+        this.g_s.setPosition(g_x, g_y)
     }
-
-    private spawn_ghost() {
-        let img = this.tdata.ghost_img
-        if (this.rotation != 0) {
-            img = img.rotated(this.rotation * 90)
-        }
-        this.ghost_piece.setImage(img)
-        let x = X0 + (this.x * CELL_SIZE + this.ghost_piece.width / 2)
-        let y = Y0 + ((this.y + this.pitfall) * CELL_SIZE + this.ghost_piece.height / 2)
-        this.ghost_piece.setPosition(x, y)
-    }
-
-    strafe(x_inc: number) {
-        let new_x = this.x + x_inc
-        if (!this.collision(new_x, this.y, this.rotation)) {
-            this.respawnAt(new_x, this.y, this.rotation)
-        }
-    }
-
-    sonar(well: Well): number { /* returns min possible drop depth (pitfall) the current piece */
-        
-        let pitfall = MATRIX_HEIGHT - this.y - this.tdata.colors.length + this.tdata.offsets[2]
-        // console.log(`----- >> Starting with pitfall = ${pitfall}`)
-        for (let col = this.tdata.offsets[3]; col < this.tdata.colors.length - this.tdata.offsets[1]; col++) {
-            let piece_column_bottom_hole = 0
-            for (let row = this.tdata.colors.length - this.tdata.offsets[2] - 1; row >= this.tdata.offsets[0]; row--) {
-                // console.log(`Color at ${row}, ${col} is ${this.tdata.colors[row][col]}`)
-                if (this.tdata.colors[row][col] != 0) {
+    private sonar(well: Well): number { 
+        /* 
+        returns max possible drop depth (pitfall) the current piece
+        considering the holes in the bottom of the piece
+        */
+        const piece_btm = this.y + this.colors.length - this.offs[2]
+        let pitfall = MATRIX_H - piece_btm
+        // console.log(`----- >> Starting with pitfall = ${pitfall} piece_bottom = ${piece_bottom}`)
+        // let s = "" 
+        for (let col = this.offs[3]; col < this.colors.length - this.offs[1]; col++) {
+            let piece_hole_depth = 0
+            for (let row = this.colors.length - this.offs[2] - 1; row >= this.offs[0]; row--) {
+                // console.log(`Color at ${row}, ${col} is ${this.colors[row][col]}`)
+                if (this.colors[row][col] != 0) {
+                    const col_btm = piece_btm - piece_hole_depth
                     // console.log(`Found bottom element at [${row}, ${col}]`)
-                    const wellColumn = well.cell_col(col + this.x)
+                    const wellColumn = well.cell_col(col + this.x).slice(col_btm)
 /* 
-                    let s = ""
                     for (let index = 0; index < wellColumn.length; index++) {
                         s += wellColumn[index]
                     }
  */
-                    let peak = wellColumn.indexOf(1)
-                    if (peak == -1) {
-                        peak = MATRIX_HEIGHT
+                    let index = wellColumn.indexOf(1)
+                    if (index == -1) {
+                        index = wellColumn.length
                     }
-                    let col_pitfall = peak - this.y - this.tdata.colors.length + this.tdata.offsets[2] + piece_column_bottom_hole
-                    // console.log(`Column [${col + this.x}] : ${s} Peak = ${peak}; Column pitfall = ${col_pitfall}`)
-                    if (col_pitfall < pitfall) {
-                        pitfall = col_pitfall
+                    // s += "\n"
+                    if (index < pitfall) {
+                        pitfall = index
                     }
                     break
                 }
-                piece_column_bottom_hole ++
+                piece_hole_depth ++
             }            
         }
-        // console.log(`<< New pitfall = ${pitfall}`)
+        // console.log(`${s}`)
+        // console.log(`<< Piece pitfall = ${pitfall}`)
         return pitfall
     }
-
-    rotate(cw: boolean) {
-        let next_rotation
-        if (cw) {
-            next_rotation = this.rotation + 1
-            if (next_rotation > 3) {
-                next_rotation = 0
-            }
-            this.tdata.offsets.unshift(this.tdata.offsets.pop())
+    private collisionForecast(new_x: number, new_y: number, new_rot: number): boolean {
+        let arr: number[][]
+        let offs: number[]
+        // console.log("Checking collisions")
+        /* If new_rot is different from the current rotation, we need to create
+        a copy of the current piece matrix, rotate it and generate offsets array for it
+        If rotation is not about to occur, we just take the current piece matrix and
+        offsets */
+        if (new_rot != this.rot) { /* if this is a forecast for rotation */
+            arr = getPieceColors(this.id, new_rot)
+            offs = this.getOffsets(new_rot)
         } else {
-            next_rotation = this.rotation - 1
-            if (next_rotation < 0) {
-                next_rotation = 3
-            }
-            this.tdata.offsets.push(this.tdata.offsets.shift())         
+            arr = this.colors
+            offs = this.offs
         }
-        let tmp_array = this.tdata.colors
-        this.tdata.colors = rotateArray(tmp_array, cw)
-        // this.print_piece(tmp_array)
-        // this.print_piece(this.tdata.colors)
-        let canRotate = true // wall kicks to be added later
-        let kick_x = 0
-        let kick_y = 0
-        // console.log(this.tdata.offsets[0] +" "+ this.tdata.offsets[1] +" "+ this.tdata.offsets[2] +" "+ this.tdata.offsets[3])
-        if (canRotate) {
-            this.respawnAt(this.x + kick_x, this.y + kick_y, next_rotation)
-        }
-    }
-
-    drop(hard: boolean) {
-        this.respawnAt(this.x, (hard ? this.pitfall : this.y + 1), this.rotation)
-        if (this.y == this.y + this.pitfall) {
-            this.lock(well)
-        }
-    }
-
-    lock(well: Well) {
-        for (let row = this.tdata.offsets[0]; row < this.tdata.colors.length - this.tdata.offsets[2]; row++) {
-            for (let col = this.tdata.offsets[3]; col < this.tdata.colors.length - this.tdata.offsets[1]; col++) {
-                if (this.tdata.colors[row][col] != 0) {
-                    well.changeColor(this.x + col, this.y + row, this.tdata.colors[row][col])
+        for (let t_row = offs[0]; t_row < arr.length - offs[2]; t_row++) {
+            for (let t_col = offs[3]; t_col < arr.length - offs[1]; t_col++) {
+                if (arr[t_row][t_col] != 0 && (t_col + new_x < 0 || t_col + new_x > MATRIX_W - 1 || t_row + new_y > MATRIX_H - 1)) {
+                    console.log(`Out of bounds ${arr[t_row][t_col]} && ${t_col + new_x} || ${t_col + new_x} || ${t_row + new_y}`)
+                    return true
+                } else if (arr[t_row][t_col] != 0 && well.cells[t_row + new_y][t_col + new_x] == 1) {
+                    console.log("Cell collision")
+                    return true
                 }
             }
         }
-        well.update()
-        this.spawn()
-        // this.print_piece()
-        // this.print_well(well)
+        return false
     }
-
-    collision(new_x: number, new_y: number, new_rotation: number): boolean {
-        if (new_x + this.tdata.offsets[3] >= 0 && new_x + this.tdata.colors.length - this.tdata.offsets[1] <= MATRIX_WIDTH) {
-
-            return false
-        } else {
-            return true
+    strafe(x_inc: number) {
+        const new_x = this.x + x_inc
+        // const collision = (new_x + this.offs[3] < 0 || new_x + this.colors.length - this.offs[1] > MATRIX_W)
+        if (!this.collisionForecast(new_x, this.y, this.rot)) {
+            this.respawnAt(new_x, this.y, this.rot)
         }
     }
+    rotate() {
+        let next_rotation = this.rot - 1 // in this game we only rotate CCW
+        if (next_rotation < 0) {
+            next_rotation = 3
+        }
+        const wall_kick_tests = (this.id == 0 ? wall_kick_data_I[this.rot * 2 + 1] : wall_kick_data[this.rot * 2 + 1])
+        let kick_x = 0
+        let kick_y = 0
+        for (let test = 0; test < 5; test++) {
+            if (!this.collisionForecast(this.x + wall_kick_tests[test][0], this.y - wall_kick_tests[test][1], next_rotation)) {
+                kick_x = wall_kick_tests[test][0]
+                kick_y = -wall_kick_tests[test][1]
+                this.respawnAt(this.x + kick_x, this.y + kick_y, next_rotation)
+                break
+            }
+        }
+    }
+    drop(hard: boolean) {
+        if (hard) {
+            score += this.pit * 2
+            updateStats()
+            this.respawnAt(this.x, this.y + this.pit, this.rot)
+            lock()
+        } else {
+            const new_y = this.y + 1
+            if (!this.collisionForecast(this.x, new_y, this.rot)) {
+                this.respawnAt(this.x, new_y, this.rot)
+            } else {
+                lock()
+            }
+        }
+    }
+    removeSprites() {
+        this.s.destroy()
+        this.g_s.destroy()
+    }
 }
-
 class Well {
-    matrix: Sprite
+    private s: Sprite
     colors: number[][]
     cells: number[][]
-
     constructor() {
         this.colors = []
         this.cells = []
-        for (let i = 0; i < MATRIX_HEIGHT; i++) {
+        for (let i = 0; i < MATRIX_H; i++) {
             this.colors.push([])
             this.cells.push([])
-            for (let j = 0; j < MATRIX_WIDTH; j++) {
+            for (let j = 0; j < MATRIX_W; j++) {
                 this.colors[i].push(0)
                 this.cells[i].push(0)
             }
         }
-        this.matrix = sprites.create(image.create(MATRIX_WIDTH * CELL_SIZE, MATRIX_HEIGHT * CELL_SIZE))
-        this.matrix.image.fill(0)
-        this.matrix.setPosition(X0 + MATRIX_WIDTH * CELL_SIZE / 2, Y0 + MATRIX_HEIGHT * CELL_SIZE / 2)
-        this.matrix.z = 0
+        this.s = sprites.create(image.create(MATRIX_W * C_SIZE, MATRIX_H * C_SIZE))
+        this.s.image.fill(0)
+        this.s.setPosition(X0 + MATRIX_W * C_SIZE / 2, Y0 + MATRIX_H * C_SIZE / 2)
+        this.s.z = 0
     }
-
     changeColor(x: number, y: number, c: number) {
         this.colors[y][x] = c
         this.cells[y][x] = 1
     }
-
-    update() {
-        this.matrix.image.fill(0)
-        for (let row = 0; row < MATRIX_HEIGHT; row++) {
-            for (let col = 0; col < MATRIX_WIDTH; col++) {
+    checkRows() {
+        let lc = 0
+        for (let row = 2; row < MATRIX_H; row++) {
+            if (this.cells[row].indexOf(0) == -1) {
+                let empty_colors: number[] = []
+                let empty_cells: number[] = []
+                for (let index = 0; index < MATRIX_W; index++) {
+                    empty_colors.push(0)
+                    empty_cells.push(0)
+                }
+                lc ++
+                lines ++
+                this.cells.removeAt(row)
+                this.colors.removeAt(row)
+                this.cells.unshift(empty_cells)
+                this.colors.unshift(empty_colors)
+            }
+        }
+        this.s.image.fill(0)
+        for (let row = 0; row < MATRIX_H; row++) {
+            for (let col = 0; col < MATRIX_W; col++) {
                 if (this.colors[row][col] != 0) {
                     // console.log("Painting rect at [" + row + ", " + col + "] with color " + this.colors[row][col])
-                    this.matrix.image.fillRect(col * CELL_SIZE, row * CELL_SIZE, CELL_SIZE, CELL_SIZE, this.colors[row][col])
+                    this.s.image.fillRect(col * C_SIZE, row * C_SIZE, C_SIZE, C_SIZE, this.colors[row][col])
                 }
             }
         }
-    }
-
-    cell_row(i: number): number[] {
-        let result = []
-        for (let j = 0; j < MATRIX_WIDTH; j++) {
-            result.push(this.cells[i][j])
+        if (lc != 0) {
+            switch (lc) {
+                case 1:
+                    score += (100 * level)
+                    break
+                case 2:
+                    score += (300 * level)
+                    break
+                case 3:
+                    score += (500 * level)
+                    break
+                case 4:
+                    score += (800 * level)
+            }
+            // UPDATE LEVEL
+            if (lines >= 10 * level) {
+                level++
+                gravity = Math.pow(0.8 - ((level - 1) * 0.007), level - 1)
+            }
+            updateStats()
         }
-        return result
     }
-
     cell_col(j: number): number[] {
         let result = []
-        for (let i = 0; i < MATRIX_HEIGHT; i++) {
+        for (let i = 0; i < MATRIX_H; i++) {
             result.push(this.cells[i][j])
         }
         return result
     }
-
 }
 
-// EXT. FUNCTIONS -----------------------------------------
+// GAME FUNCTIONS -----------------------------------------
 
-function rotateArray(arr: number[][], cw: boolean): number[][] {
-    for (let i = 0; i < arr.length; i++) {
-        for (let j = 0; j < i; j++) {
-            [arr[i][j], arr[j][i]] = [arr[j][i], arr[i][j]];
+function hold() {
+    if (bag.can_hold) {
+        let held_id = t.id
+        t.removeSprites()
+        if (bag.hold_cell !== undefined) {
+            t = new Tetrimino(bag.hold_cell)
+        } else {
+            t = new Tetrimino(bag.next)
         }
+        bag.hold_cell = held_id
+        bag.can_hold = false
     }
-    if (cw) {
-        for (let i = 0; i < arr.length; i++) {
-            arr[i].reverse();
-        }
-    } else {
-        for (let i = 0; i < arr.length; i++) {
-            for (let j = 0; j < arr.length / 2; j++) {
-                [arr[j][i], arr[arr.length - j - 1][i]] = [arr[arr.length - j - 1][i], arr[j][i]];
+}
+function lock() {
+    for (let row = t.offs[0]; row < t.colors.length - t.offs[2]; row++) {
+        for (let col = t.offs[3]; col < t.colors.length - t.offs[1]; col++) {
+            if (t.colors[row][col] != 0) {
+                // console.log(`Calling changeColor(${tetrimino.x + col}, ${tetrimino.y + row}, ${tetrimino.colors[row][col]})`)
+                well.changeColor(t.x + col, t.y + row, t.colors[row][col])
             }
         }
     }
-    return arr
+    if (t.y == 0) {
+        // clearInterval(tickID)
+        game.over(false)
+    }
+    well.checkRows()
+    t.removeSprites()
+    t = new Tetrimino(bag.next)
 }
 
+// UTILITY FUNCTIONS --------------------------------------
+
+function getPieceColors(id: number, rot: number): number[][] {
+    let matrix: number[][] = []
+    const shapes = [
+        [[4, 5, 6, 7], [2, 6, 10, 14], [8, 9, 10, 11], [1, 5, 9, 13]],
+        [[0, 3, 4, 5], [1, 2, 4, 7], [3, 4, 5, 8], [1, 4, 6, 7]],
+        [[2, 3, 4, 5], [1, 4, 7, 8], [3, 4, 5, 6], [0, 1, 4, 7]],
+        [[0, 1, 2, 3], [0, 1, 2, 3], [0, 1, 2, 3], [0, 1, 2, 3]],
+        [[1, 2, 3, 4], [1, 4, 5, 8], [4, 5, 6, 7], [0, 3, 4, 7]],
+        [[1, 3, 4, 5], [1, 4, 5 ,7], [3, 4, 5, 7], [1, 3, 4, 7]],
+        [[0, 1, 4, 5], [2, 4, 5, 7], [3, 4, 7 ,8], [1, 3 ,4 ,6]]
+    ]
+    let max = (id == 0) ? 4 : ((id == 3) ? 2 : 3)
+    let i = 0
+    for (let r = 0; r < max; r++) {
+        matrix.push([])
+        for (let c = 0; c < max; c++) {
+            if (shapes[id][rot][i] % max == c && Math.floor(shapes[id][rot][i] / max) == r) {
+                matrix[r].push(tetris_colors[id])
+                i++
+            } else {
+                matrix[r].push(0)
+            }
+        }
+    }
+    return matrix 
+}
+function getPieceImage(colors: number[][]): [Image, Image] {
+    let img = image.create(colors.length * C_SIZE, colors.length * C_SIZE)
+    let ghost_img = image.create(colors.length * C_SIZE, colors.length * C_SIZE)
+    for (let y = 0; y < colors.length; y++) {
+        for (let x = 0; x < colors.length; x++) {
+            if (colors[y][x] != 0) {
+                img.fillRect(x * C_SIZE, y * C_SIZE, C_SIZE, C_SIZE, colors[y][x])
+                img.fillRect(x * C_SIZE + 1, y * C_SIZE + 1, C_SIZE - 2, C_SIZE - 2, 0)
+                img.fillRect(x * C_SIZE + 2, y * C_SIZE + 2, C_SIZE - 4, C_SIZE - 4, colors[y][x])
+                ghost_img.fillRect(x * C_SIZE, y * C_SIZE, C_SIZE, C_SIZE, 12)
+                ghost_img.fillRect(x * C_SIZE + 1, y * C_SIZE + 1, C_SIZE - 2, C_SIZE - 2, 0)
+            }
+        }
+    }
+    return [img, ghost_img]
+}
+function printPiece(piece: number[][]) {
+    let s = "------------\r\n"
+    for (let i = 0; i < piece.length; i++) {
+        for (let j = 0; j < piece[i].length; j++) {
+            if (piece[i][j] != 0) {
+                s += `[${piece[i][j]}]`
+            } else {
+                s += "   "
+            }
+        }
+        s += "\r\n"
+    }
+    console.log(s)
+}
+function printWell() {
+    let s = "------------------------------"
+    for (let i = 0; i < MATRIX_H; i++) {
+        for (let j = 0; j < MATRIX_W; j++) {
+            if (well.colors[i][j] == 0) {
+                s += "   "
+            } else {
+                s += "[" + well.colors[i][j] + "]"
+            }
+        }
+        s += "\r\n"
+    }
+    console.log(s)
+}
+function printArray(arr: number[]) {
+    let s = "[ "
+    for (let elem of arr) {
+        s += elem + " "
+    }
+    s += "]"
+    console.log(s)
+}
+function print2DArray(arr: number[][]) {
+    let s = ""
+    for (let row of arr) {
+        for (let elem of row) {
+            s += elem + " "
+        }
+        s += "\n"
+    }
+    console.log(s)
+}
 function updateStats() {
     sScore.setText(score.toString())
     sLevel.setText(level.toString())
@@ -348,148 +440,70 @@ function updateStats() {
 
 // SETTINGS -----------------------------------------------
 
-const CELL_SIZE = 5
+const C_SIZE = 6
 const NEXT_PIECES = 3
-const MATRIX_HEIGHT = 22
-const MATRIX_WIDTH = 10
-const X0 = 55
-const Y0 = 5
+const MATRIX_H = 20
+const MATRIX_W = 10
+const X0 = 50
+const Y0 = 0
 
 // DATA ---------------------------------------------------
 
-/* const shapes: Image[] = [
+const tetris_colors = [9, 8, 4, 5, 7, 10, 2]
+const shapes_pixel_data = [
     assets.image`I`,
     assets.image`J`,
     assets.image`L`,
     assets.image`O`,
     assets.image`S`,
     assets.image`T`,
-    assets.image`Z`,
-    assets.image`I0`,
-    assets.image`J0`,
-    assets.image`L0`,
-    assets.image`O0`,
-    assets.image`S0`,
-    assets.image`T0`,
-    assets.image`Z0`
-
-] */
-
-const shapes_data = [
-    {
-        colors: [
-            [0, 0, 0, 0],
-            [9, 9, 9, 9],
-            [0, 0, 0 ,0],
-            [0, 0, 0, 0]
-        ],
-        offsets: [1, 0, 2, 0],
-        spawnX: 3,
-        img: assets.image`I`,
-        ghost_img: assets.image`I0`
-    },
-    {
-        colors: [
-            [8, 0, 0],
-            [8, 8, 8],
-            [0, 0, 0]
-        ],
-        offsets: [0, 0, 1, 0],
-        spawnX: 3,
-        img: assets.image`J`,
-        ghost_img: assets.image`J0`
-    },
-    {
-        colors: [
-            [0, 0, 4],
-            [4, 4, 4],
-            [0, 0, 0]
-        ],
-        offsets: [0, 0, 1, 0],
-        spawnX: 3,
-        img: assets.image`L`,
-        ghost_img: assets.image`L0`
-    },
-    {
-        colors: [
-            [5, 5],
-            [5, 5]
-        ],
-        offsets: [0, 0, 0, 0],
-        spawnX: 4,
-        img: assets.image`O`,
-        ghost_img: assets.image`O0`
-    },
-    {
-        colors: [
-            [0, 7, 7],
-            [7, 7, 0],
-            [0, 0, 0]
-        ],
-        offsets: [0, 0, 1, 0],
-        spawnX: 3,
-        img: assets.image`S`,
-        ghost_img: assets.image`S0`
-    },
-    {
-        colors: [
-            [0, 10, 0],
-            [10, 10, 10],
-            [0, 0, 0]
-        ],
-        offsets: [0, 0, 1, 0],
-        spawnX: 3,
-        img: assets.image`T`,
-        ghost_img: assets.image`T0`
-    },
-    {
-        colors: [
-            [2, 2, 0],
-            [0, 2, 2],
-            [0, 0, 0]
-        ],
-        offsets: [0, 0, 1, 0],
-        spawnX: 3,
-        img: assets.image`Z`,
-        ghost_img: assets.image`Z0`
-    }
+    assets.image`Z`
 ]
-
-const offsets = [   // [shape: 0..6][rotation --> pop / unshift][direction: top, right, bottom, left]
-    [1, 0, 2, 0],
-    [0, 0, 1, 0],
-    [0, 0, 1, 0],
-    [0, 0, 0, 0],
-    [0, 0, 1, 0],
-    [0, 0, 1, 0],
-    [0, 0, 1, 0]
+const shapes = [
+    [[4, 5, 6, 7], [2, 6, 10, 14], [8, 9, 10, 11], [1, 5, 9, 13]],
+    [[0, 3, 4, 5], [1, 2, 4, 7], [3, 4, 5, 8], [1, 4, 6, 7]],
+    [[2, 3, 4, 5], [1, 4, 7, 8], [3, 4, 5, 6], [0, 1, 4, 7]],
+    [[0, 1, 2, 3], [0, 1, 2, 3], [0, 1, 2, 3], [0, 1, 2, 3]],
+    [[1, 2, 3, 4], [1, 4, 5, 8], [4, 5, 6, 7], [3, 4, 5, 7]],
+    [[1, 3, 4, 5], [1, 4, 5 ,7], [3, 4, 5, 7], [1, 3, 4, 7]],
+    [[0, 1, 4, 5], [2, 4, 5, 7], [3, 4, 7 ,8], [1, 3 ,4 ,6]]
 ]
+const wall_kick_data = [
+    [[0, 0], [-1, 0], [-1, 1], [0, -2], [-1, -2]],  // 0: 0 cw
+    [[0, 0], [1, 0], [1, 1], [0, -2], [1, -2]],     // 1: 0 !cw
 
-/* 
-const heights = [
-    [2, 4, 3, 4],
-    [2, 3, 3, 3],
-    [2, 3, 3, 3],
-    [2, 2, 2, 2],
-    [2, 3, 3, 3],
-    [2, 3, 3, 3],
-    [2, 3, 3, 3]
+    [[0, 0], [1, 0], [1, -1], [0, 2], [1, 2]],      // 2: 1 cw
+    [[0, 0], [1, 0], [1, -1], [0, 2], [1, 2]],      // 3: 1 !cw
+
+    [[0, 0], [1, 0], [1, 1], [0, -2], [1, -2]],     // 4: 2 cw
+    [[0, 0], [-1, 0], [-1, 1], [0, -2], [-1, -2]],  // 5: 2 !cw
+
+    [[0, 0], [-1, 0], [-1, -1], [0, 2], [-1, 2]],   // 6: 3 cw
+    [[0, 0], [-1, 0], [-1, -1], [0, 2], [-1, 2]]    // 7: 3 !cw
 ]
- */
+const wall_kick_data_I = [
+    [[0, 0], [-2, 0], [1, 0], [-2, -1], [1, 2]],    // 0: 0 cw
+    [[0, 0], [-1, 0], [+2, 0], [-1, 2], [2, -1]],   // 1: 0 !cw
 
-enum Rotation {
-    Z = 0,
-    R = 1,
-    T = 2,
-    L = 3
-}
+    [[0, 0], [-1, 0], [2, 0], [-1, 2], [2, -1]],    // 2: 1 cw
+    [[0, 0], [2, 0], [-1, 0], [+2, +1], [-1, -2]],  // 3: 1 !cw
+
+    [[0, 0], [2, 0], [-1, 0], [2, 1], [-1, -2]],    // 4: 2 cw
+    [[0, 0], [1, 0], [-2, 0], [1, -2], [-2, -2]],   // 5: 2 !cw
+
+    [[0, 0], [1, 0], [-2, -0], [1, -2], [-2, 1]],   // 6: 3 cw
+    [[0, 0], [-2, 0], [1, 0], [-2, -1], [1, 2]]     // 7: 3 !cw
+]
 
 // UI -----------------------------------------------------
 
 let bg = image.create(160, 120)
-bg.fillRect(X0 - 3, Y0 - 3, 56, 116, 11)          // Matrix
-bg.fillRect(X0 - 1, Y0 - 1, 52, 112, 0)
+bg.fillRect(X0-4, Y0, 68, 120, 12)          // Matrix
+bg.fillRect(X0-1, Y0, 62, 120, 0)          // Matrix
 scene.setBackgroundImage(bg)
+let pause_img = sprites.create(assets.image`pause`)
+pause_img.z = 10
+pause_img.setPosition(80, -60)
 
 // STATS --------------------------------------------------
 
@@ -498,13 +512,13 @@ let sLevelTitle = sprites.create(assets.image`txt_level`)
 let sLinesTitle = sprites.create(assets.image`txt_lines`)
 let sHighscoreTitle = sprites.create(assets.image`txt_hiscore`)
 let sNextTitle = sprites.create(assets.image`txt_next`)
-
+let sHoldTitle = sprites.create(assets.image`txt_hold`)
 sScoreTitle.setPosition(18, 18)
 sLevelTitle.setPosition(18, 43)
 sLinesTitle.setPosition(18, 68)
 sHighscoreTitle.setPosition(23, 93)
 sNextTitle.setPosition(134, 18)
-
+sHoldTitle.setPosition(134, 93)
 let sScore = textsprite.create("0", 0, 11)
 sScore.setMaxFontHeight(5)
 let sLevel = textsprite.create("0", 0, 11)
@@ -521,49 +535,47 @@ let score: number = 0
 let gravity: number = 1
 let lines: number = 0
 let highscore: number = 0
-
+let paused = false
+let frame: number = 0
 let bag = new Bag()
 let well = new Well()
-let tetrimino = new Tetrimino()
-
-let im = image.create(10, 10)
-
+let t = new Tetrimino(bag.next)
+game.onUpdate(function () {
+    const tick = gravity * 60
+    frame++
+    if (frame > tick) {
+        t.drop(false)
+        frame = 0
+    }
+})
 updateStats()
 
 // CONTROLLER ---------------------------------------------
 
 controller.A.onEvent(ControllerButtonEvent.Pressed, function () {
-    tetrimino.rotate(true)
+    t.rotate()
 })
-
 controller.B.onEvent(ControllerButtonEvent.Pressed, function () {
-    tetrimino.rotate(false)
+    hold()
 })
-
 controller.down.onEvent(ControllerButtonEvent.Repeated, function () {
-    tetrimino.drop(false)
+    t.drop(false)
 })
-
 controller.left.onEvent(ControllerButtonEvent.Repeated, function () {
-    tetrimino.strafe(-1)
+    t.strafe(-1)
 })
-
 controller.right.onEvent(ControllerButtonEvent.Repeated, function () {
-    tetrimino.strafe(1)
+    t.strafe(1)
 })
-
 controller.down.onEvent(ControllerButtonEvent.Pressed, function () {
-    tetrimino.drop(false)
+    t.drop(false)
 })
-
 controller.left.onEvent(ControllerButtonEvent.Pressed, function () {
-    tetrimino.strafe(-1)
+    t.strafe(-1)
 })
-
 controller.right.onEvent(ControllerButtonEvent.Pressed, function () {
-    tetrimino.strafe(1)
+    t.strafe(1)
 })
-
 controller.up.onEvent(ControllerButtonEvent.Pressed, function () {
-    tetrimino.drop(true)
+    t.drop(true)
 })
